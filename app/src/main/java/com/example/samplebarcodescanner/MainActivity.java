@@ -16,9 +16,12 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.core.ImageAnalysis;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.camera.core.ExperimentalGetImage;
+
+import androidx.annotation.OptIn;
 
 import com.example.samplebarcodescanner.databinding.ActivityMainBinding;
-import com.google.mlkit.vision.barcode.Barcode;
+import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.common.InputImage;
@@ -90,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
         imageAnalysis.setAnalyzer(cameraExecutor, new ImageAnalysis.Analyzer() {
             @Override
+            @OptIn(markerClass = ExperimentalGetImage.class)
             public void analyze(@NonNull ImageProxy image) {
                 scanBarcodes(image);
             }
@@ -105,8 +109,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @androidx.camera.core.ExperimentalGetImage
+    @OptIn(markerClass = ExperimentalGetImage.class)
     private void scanBarcodes(ImageProxy image) {
+        if (image.getImage() == null) {
+            image.close();
+            return;
+        }
+
         InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
 
         barcodeScanner.process(inputImage)
