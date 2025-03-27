@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -14,6 +15,8 @@ import java.util.List;
 public class BarcodeOverlayView extends View {
     private List<Barcode> barcodes;
     private final Paint paint;
+    private int previewWidth;
+    private int previewHeight;
 
     public BarcodeOverlayView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -23,8 +26,10 @@ public class BarcodeOverlayView extends View {
         paint.setStrokeWidth(8.0f);
     }
 
-    public void setBarcodes(List<Barcode> barcodes) {
+    public void setBarcodes(List<Barcode> barcodes, int previewWidth, int previewHeight) {
         this.barcodes = barcodes;
+        this.previewWidth = previewWidth;
+        this.previewHeight = previewHeight;
         invalidate();
     }
 
@@ -33,7 +38,16 @@ public class BarcodeOverlayView extends View {
         super.onDraw(canvas);
         if (barcodes != null) {
             for (Barcode barcode : barcodes) {
-                canvas.drawRect(barcode.getBoundingBox(), paint);
+                Rect boundingBox = barcode.getBoundingBox();
+                if (boundingBox != null) {
+                    float scaleX = getWidth() / (float) previewWidth;
+                    float scaleY = getHeight() / (float) previewHeight;
+                    float left = boundingBox.left * scaleX;
+                    float top = boundingBox.top * scaleY;
+                    float right = boundingBox.right * scaleX;
+                    float bottom = boundingBox.bottom * scaleY;
+                    canvas.drawRect(left, top, right, bottom, paint);
+                }
             }
         }
     }
