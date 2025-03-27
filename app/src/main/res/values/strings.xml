@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Sample Barcode Scanner</string>
+    <string name="get_started">Get Started</string>
+    <string name="stop_capture">Stop Capture</string>
+</resources>
