@@ -18,7 +18,7 @@ public class BarcodeOverlayView extends View {
     public BarcodeOverlayView(Context context, AttributeSet attrs) {
         super(context, attrs);
         paint = new Paint();
-        paint.setColor(Color.RED);
+        paint.setColor(Color.GREEN);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(8.0f);
     }
