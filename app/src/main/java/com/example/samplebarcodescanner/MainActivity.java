@@ -7,18 +7,17 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ExperimentalGetImage;
+import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.core.ImageAnalysis;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.camera.core.ExperimentalGetImage;
-
-import androidx.annotation.OptIn;
 
 import com.example.samplebarcodescanner.databinding.ActivityMainBinding;
 import com.google.mlkit.vision.barcode.common.Barcode;
@@ -54,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         viewBinding.imageCaptureButton.setOnClickListener(view -> {
             if (allPermissionsGranted()) {
                 startCamera();
+                viewBinding.imageCaptureButton.setText("CAPTURE"); // Change button text to "Capture"
             } else {
                 requestPermissions();
             }
@@ -129,7 +129,6 @@ public class MainActivity extends AppCompatActivity {
                 .addOnCompleteListener(task -> image.close());
     }
 
-
     private void drawBoundingBoxes(List<Barcode> barcodes) {
         int previewWidth = viewBinding.viewFinder.getWidth();  // Assuming this is the width of your PreviewView
         int previewHeight = viewBinding.viewFinder.getHeight();  // Assuming this is the height of your PreviewView
@@ -163,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera();
+                viewBinding.imageCaptureButton.setText("Capture"); // Change button text to "Capture"
             } else {
                 Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
             }
