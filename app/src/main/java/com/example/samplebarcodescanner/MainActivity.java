@@ -116,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // Use the image rotation degree from the camera
         InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
 
         barcodeScanner.process(inputImage)
@@ -128,9 +129,11 @@ public class MainActivity extends AppCompatActivity {
                 .addOnCompleteListener(task -> image.close());
     }
 
+
     private void drawBoundingBoxes(List<Barcode> barcodes) {
-        // Ensure you have this setup in your activity to update the overlay
-        viewBinding.barcodeOverlay.setBarcodes(barcodes);
+        int previewWidth = viewBinding.viewFinder.getWidth();  // Assuming this is the width of your PreviewView
+        int previewHeight = viewBinding.viewFinder.getHeight();  // Assuming this is the height of your PreviewView
+        viewBinding.barcodeOverlay.setBarcodes(barcodes, previewWidth, previewHeight);
     }
 
     private void requestPermissions() {
