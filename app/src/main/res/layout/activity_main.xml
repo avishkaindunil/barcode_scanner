@@ -18,6 +18,15 @@
         android:layout_height="match_parent"
         android:elevation="10dp" />
 
-    <!-- Other UI elements -->
+    <!-- Add the Get Started button and constrain it to the bottom -->
+    <Button
+        android:id="@+id/imageCaptureButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GET STARTED"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

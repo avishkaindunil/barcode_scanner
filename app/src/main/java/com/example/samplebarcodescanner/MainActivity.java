@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Size;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageCapture imageCapture;
     private ExecutorService cameraExecutor;
     private BarcodeScanner barcodeScanner;
+    private Button imageCaptureButton;
 
     private static final String TAG = "BarcodeScanner";
     private static final int REQUEST_CODE_PERMISSIONS = 10;
@@ -47,15 +50,19 @@ public class MainActivity extends AppCompatActivity {
 
         previewView = findViewById(R.id.previewView);
         barcodeOverlayView = findViewById(R.id.barcodeOverlay);
+        imageCaptureButton = findViewById(R.id.imageCaptureButton);
 
         cameraExecutor = Executors.newSingleThreadExecutor();
         barcodeScanner = BarcodeScanning.getClient();
 
-        if (allPermissionsGranted()) {
-            startCamera();
-        } else {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-        }
+        imageCaptureButton.setOnClickListener(view -> {
+            if (allPermissionsGranted()) {
+                startCamera();
+                imageCaptureButton.setText("CAPTURE"); // Change button text to "CAPTURE"
+            } else {
+                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+            }
+        });
     }
 
     private void startCamera() {
@@ -72,19 +79,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
-        Preview preview = new Preview.Builder().build();
+        Preview preview = new Preview.Builder()
+                .setTargetResolution(new Size(1920, 1080)) // Set this resolution based on your needs
+                .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build();
 
-        imageCapture = new ImageCapture.Builder().build();
+        imageCapture = new ImageCapture.Builder()
+                .setTargetResolution(new Size(1920, 1080)) // Match this with the preview if possible
+                .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setTargetResolution(new Size(1920, 1080)) // Consistent resolution
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
 
-        imageAnalysis.setAnalyzer(cameraExecutor, image -> scanBarcodes(image));
+        imageAnalysis.setAnalyzer(cameraExecutor, this::scanBarcodes);
 
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
@@ -106,15 +118,10 @@ public class MainActivity extends AppCompatActivity {
         InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
 
         barcodeScanner.process(inputImage)
-                .addOnSuccessListener(barcodes -> {
-                    if (!barcodes.isEmpty()) {
-                        drawBoundingBoxes(barcodes);
-                    }
-                })
+                .addOnSuccessListener(this::drawBoundingBoxes)
                 .addOnFailureListener(e -> Log.e(TAG, "Barcode scanning failed", e))
                 .addOnCompleteListener(task -> image.close());
     }
-
 
     private void drawBoundingBoxes(List<Barcode> barcodes) {
         int previewWidth = previewView.getWidth();
@@ -137,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera();
+                imageCaptureButton.setText("CAPTURE"); // Change button text to "CAPTURE"
             } else {
                 Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
                 finish();
