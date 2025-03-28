@@ -5,46 +5,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:id="@+id/main">
+    tools:context=".MainActivity">
 
     <androidx.camera.view.PreviewView
-        android:id="@+id/viewFinder"
+        android:id="@+id/previewView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:layout_editor_absoluteX="-16dp"
-        tools:layout_editor_absoluteY="0dp" />
-
-    <Button
-        android:id="@+id/image_capture_button"
-        android:layout_width="250dp"
-        android:layout_height="60dp"
-        android:layout_marginEnd="108dp"
-        android:layout_marginBottom="48dp"
-        android:backgroundTint="#0073e6"
-        android:elevation="2dp"
-        android:text="@string/get_started"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/vertical_centerline"
-        app:layout_constraintLeft_toLeftOf="parent" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/vertical_centerline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_begin="411dp" />
+        android:layout_height="match_parent" />
 
     <com.example.samplebarcodescanner.BarcodeOverlayView
         android:id="@+id/barcodeOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="0dp"
-        android:elevation="10dp"/>
+        android:elevation="10dp" />
 
-    <!-- Ensure it's on top -->
-
+    <!-- Other UI elements -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -7,10 +7,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageProxy;
@@ -18,8 +16,9 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.camera.view.PreviewView;
 
-import com.example.samplebarcodescanner.databinding.ActivityMainBinding;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
@@ -31,36 +30,32 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
-    private ActivityMainBinding viewBinding;
-
-    private ImageCapture imageCapture = null;
+    private PreviewView previewView;
+    private BarcodeOverlayView barcodeOverlayView;
+    private ImageCapture imageCapture;
     private ExecutorService cameraExecutor;
     private BarcodeScanner barcodeScanner;
 
-    private static final String TAG = "Sample Barcode Scanner";
+    private static final String TAG = "BarcodeScanner";
     private static final int REQUEST_CODE_PERMISSIONS = 10;
-    private static final String[] REQUIRED_PERMISSIONS = new String[]{
-            Manifest.permission.CAMERA
-    };
+    private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        viewBinding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(viewBinding.getRoot());
+        setContentView(R.layout.activity_main);
 
-        // Set up the listener for the "Get Started" button
-        viewBinding.imageCaptureButton.setOnClickListener(view -> {
-            if (allPermissionsGranted()) {
-                startCamera();
-                viewBinding.imageCaptureButton.setText("CAPTURE"); // Change button text to "Capture"
-            } else {
-                requestPermissions();
-            }
-        });
+        previewView = findViewById(R.id.previewView);
+        barcodeOverlayView = findViewById(R.id.barcodeOverlay);
 
         cameraExecutor = Executors.newSingleThreadExecutor();
         barcodeScanner = BarcodeScanning.getClient();
+
+        if (allPermissionsGranted()) {
+            startCamera();
+        } else {
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+        }
     }
 
     private void startCamera() {
@@ -83,40 +78,31 @@ public class MainActivity extends AppCompatActivity {
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build();
 
-        imageCapture = new ImageCapture.Builder()
-                .setTargetRotation(getWindowManager().getDefaultDisplay().getRotation())
-                .build();
+        imageCapture = new ImageCapture.Builder().build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
 
-        imageAnalysis.setAnalyzer(cameraExecutor, new ImageAnalysis.Analyzer() {
-            @Override
-            @OptIn(markerClass = ExperimentalGetImage.class)
-            public void analyze(@NonNull ImageProxy image) {
-                scanBarcodes(image);
-            }
-        });
+        imageAnalysis.setAnalyzer(cameraExecutor, image -> scanBarcodes(image));
 
-        preview.setSurfaceProvider(viewBinding.viewFinder.getSurfaceProvider());
+        preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
         try {
             cameraProvider.unbindAll();
-            cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, imageAnalysis);
+            cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageCapture, imageAnalysis);
         } catch (Exception e) {
             Log.e(TAG, "Binding failed", e);
         }
     }
 
-    @OptIn(markerClass = ExperimentalGetImage.class)
+    @androidx.camera.core.ExperimentalGetImage
     private void scanBarcodes(ImageProxy image) {
         if (image.getImage() == null) {
             image.close();
             return;
         }
 
-        // Use the image rotation degree from the camera
         InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
 
         barcodeScanner.process(inputImage)
@@ -129,31 +115,20 @@ public class MainActivity extends AppCompatActivity {
                 .addOnCompleteListener(task -> image.close());
     }
 
-    private void drawBoundingBoxes(List<Barcode> barcodes) {
-        int previewWidth = viewBinding.viewFinder.getWidth();  // Assuming this is the width of your PreviewView
-        int previewHeight = viewBinding.viewFinder.getHeight();  // Assuming this is the height of your PreviewView
-        viewBinding.barcodeOverlay.setBarcodes(barcodes, previewWidth, previewHeight);
-    }
 
-    private void requestPermissions() {
-        ActivityCompat.requestPermissions(
-                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+    private void drawBoundingBoxes(List<Barcode> barcodes) {
+        int previewWidth = previewView.getWidth();
+        int previewHeight = previewView.getHeight();
+        barcodeOverlayView.setBarcodes(barcodes, previewWidth, previewHeight);
     }
 
     private boolean allPermissionsGranted() {
         for (String permission : REQUIRED_PERMISSIONS) {
-            if (ContextCompat.checkSelfPermission(
-                    getBaseContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 return false;
             }
         }
         return true;
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        cameraExecutor.shutdown();
     }
 
     @Override
@@ -162,10 +137,16 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera();
-                viewBinding.imageCaptureButton.setText("Capture"); // Change button text to "Capture"
             } else {
                 Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
+                finish();
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cameraExecutor.shutdown();
     }
 }
