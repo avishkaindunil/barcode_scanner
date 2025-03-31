@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         imageCaptureButton.setOnClickListener(view -> {
             if (allPermissionsGranted()) {
                 startCamera();
-                imageCaptureButton.setText("CAPTURE"); // Change button text to "CAPTURE"
+                imageCaptureButton.setText("CAPTURE");
             } else {
                 ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
             }
@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
         Preview preview = new Preview.Builder()
-                .setTargetResolution(new Size(1920, 1080)) // Set this resolution based on your needs
+                .setTargetResolution(new Size(1080, 1920))
                 .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
@@ -88,11 +88,11 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(new Size(1920, 1080)) // Match this with the preview if possible
+                .setTargetResolution(new Size(1080, 1920))
                 .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .setTargetResolution(new Size(1920, 1080)) // Consistent resolution
+                .setTargetResolution(new Size(1080, 1920)) // Consistent resolution
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
 
@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "Binding failed", e);
         }
     }
+
 
     @androidx.camera.core.ExperimentalGetImage
     private void scanBarcodes(ImageProxy image) {
