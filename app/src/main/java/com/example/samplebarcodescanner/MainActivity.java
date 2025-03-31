@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageProxy;
@@ -23,6 +24,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.camera.view.PreviewView;
+
+import androidx.annotation.OptIn;
 
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
@@ -46,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "BarcodeScanner";
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
+    private boolean isCaptureMode = false; // Track button state
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,22 +73,26 @@ public class MainActivity extends AppCompatActivity {
         barcodeScanner = BarcodeScanning.getClient();
 
         imageCaptureButton.setOnClickListener(view -> {
-            if (allPermissionsGranted()) {
-                startCamera();
-                imageCaptureButton.setText("CAPTURE");
+            if (!isCaptureMode) {
+                if (allPermissionsGranted()) {
+                    startCamera();
+                    imageCaptureButton.setText("CAPTURE");
+                    isCaptureMode = true; // Switch to capture mode
 
-                previewView.setVisibility(View.VISIBLE);
-                barcodeOverlayView.setVisibility(View.VISIBLE);
-
-                // Play beep sound
+                    previewView.setVisibility(View.VISIBLE);
+                    barcodeOverlayView.setVisibility(View.VISIBLE);
+                } else {
+                    ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+                }
+            } else {
+                // Play beep sound only when capturing
                 if (mediaPlayer != null) {
                     mediaPlayer.start();
                     Log.d(TAG, "Beep sound played.");
                 } else {
                     Log.e(TAG, "MediaPlayer is not initialized.");
                 }
-            } else {
-                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+                // Implement capture logic here if needed
             }
         });
     }
@@ -129,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
 
-        imageAnalysis.setAnalyzer(cameraExecutor, this::scanBarcodes);
+        imageAnalysis.setAnalyzer(cameraExecutor, image -> scanBarcodes(image));
 
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
@@ -141,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @androidx.camera.core.ExperimentalGetImage
+    @OptIn(markerClass = ExperimentalGetImage.class)
     private void scanBarcodes(ImageProxy image) {
         if (image.getImage() == null) {
             image.close();
@@ -178,11 +186,7 @@ public class MainActivity extends AppCompatActivity {
             if (allPermissionsGranted()) {
                 startCamera();
                 imageCaptureButton.setText("CAPTURE");
-                if (mediaPlayer != null) {
-                    mediaPlayer.start();
-                    Log.d(TAG, "Beep sound played after permission granted.");
-                }
-                // Show the camera views
+                isCaptureMode = true; // Switch to capture mode after permissions
                 previewView.setVisibility(View.VISIBLE);
                 barcodeOverlayView.setVisibility(View.VISIBLE);
             } else {
