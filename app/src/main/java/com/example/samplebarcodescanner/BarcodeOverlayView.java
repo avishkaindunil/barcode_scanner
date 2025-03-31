@@ -36,7 +36,7 @@ public class BarcodeOverlayView extends View {
         contentRectPaint.setAlpha(255);
 
         contentTextPaint = new Paint();
-        contentTextPaint.setColor(Color.DKGRAY);
+        contentTextPaint.setColor(Color.WHITE);
         contentTextPaint.setAlpha(255);
         contentTextPaint.setTextSize(36F);
     }

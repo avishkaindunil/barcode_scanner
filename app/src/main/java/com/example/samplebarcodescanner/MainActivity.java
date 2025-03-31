@@ -2,11 +2,14 @@ package com.example.samplebarcodescanner;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.widget.Button;
 import android.widget.Toast;
+import android.view.MenuItem;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -38,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private ExecutorService cameraExecutor;
     private BarcodeScanner barcodeScanner;
     private Button imageCaptureButton;
+    private MediaPlayer mediaPlayer;
 
     private static final String TAG = "BarcodeScanner";
     private static final int REQUEST_CODE_PERMISSIONS = 10;
@@ -48,9 +52,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Enable the ActionBar and set the home button as up (back) button
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
         previewView = findViewById(R.id.previewView);
         barcodeOverlayView = findViewById(R.id.barcodeOverlay);
         imageCaptureButton = findViewById(R.id.imageCaptureButton);
+
+        // Initialize MediaPlayer with a beep sound
+        mediaPlayer = MediaPlayer.create(this, R.raw.beep);
 
         cameraExecutor = Executors.newSingleThreadExecutor();
         barcodeScanner = BarcodeScanning.getClient();
@@ -59,10 +72,29 @@ public class MainActivity extends AppCompatActivity {
             if (allPermissionsGranted()) {
                 startCamera();
                 imageCaptureButton.setText("CAPTURE");
+
+                previewView.setVisibility(View.VISIBLE);
+                barcodeOverlayView.setVisibility(View.VISIBLE);
+
+                if (mediaPlayer != null) {
+                    mediaPlayer.start();
+                    Log.d(TAG, "Beep sound played.");
+                } else {
+                    Log.e(TAG, "MediaPlayer is not initialized.");
+                }
             } else {
                 ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
             }
         });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void startCamera() {
@@ -92,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .setTargetResolution(new Size(1080, 1920)) // Consistent resolution
+                .setTargetResolution(new Size(1080, 1920))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
 
@@ -107,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "Binding failed", e);
         }
     }
-
 
     @androidx.camera.core.ExperimentalGetImage
     private void scanBarcodes(ImageProxy image) {
@@ -145,7 +176,14 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera();
-                imageCaptureButton.setText("CAPTURE"); // Change button text to "CAPTURE"
+                imageCaptureButton.setText("CAPTURE");
+                if (mediaPlayer != null) {
+                    mediaPlayer.start();
+                    Log.d(TAG, "Beep sound played after permission granted.");
+                }
+                // Show the camera views
+                previewView.setVisibility(View.VISIBLE);
+                barcodeOverlayView.setVisibility(View.VISIBLE);
             } else {
                 Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
                 finish();
@@ -157,5 +195,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         cameraExecutor.shutdown();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }

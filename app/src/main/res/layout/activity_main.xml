@@ -7,23 +7,38 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <ImageView
+        android:id="@+id/zebraBackground"
+        android:layout_width="220dp"
+        android:layout_height="70dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/zebra"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
 
     <com.example.samplebarcodescanner.BarcodeOverlayView
         android:id="@+id/barcodeOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:elevation="10dp" />
+        android:elevation="10dp"
+        android:visibility="gone"/>
 
-    <!-- Add the Get Started button and constrain it to the bottom -->
     <Button
         android:id="@+id/imageCaptureButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="230dp"
+        android:layout_height="65dp"
         android:text="GET STARTED"
+        android:textSize="18sp"
+        android:backgroundTint="#ffffff"
+        android:textColor="#000000"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
