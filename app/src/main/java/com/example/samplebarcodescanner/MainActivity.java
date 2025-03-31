@@ -6,10 +6,10 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
-import android.widget.Button;
-import android.widget.Toast;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -62,8 +62,8 @@ public class MainActivity extends AppCompatActivity {
         barcodeOverlayView = findViewById(R.id.barcodeOverlay);
         imageCaptureButton = findViewById(R.id.imageCaptureButton);
 
-        // Initialize MediaPlayer with a beep sound
-        mediaPlayer = MediaPlayer.create(this, R.raw.beep);
+        // Initialize MediaPlayer with the beep sound
+        mediaPlayer = MediaPlayer.create(this, R.raw.beep); // Ensure beep.wav is correctly placed in res/raw
 
         cameraExecutor = Executors.newSingleThreadExecutor();
         barcodeScanner = BarcodeScanning.getClient();
@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
                 previewView.setVisibility(View.VISIBLE);
                 barcodeOverlayView.setVisibility(View.VISIBLE);
 
+                // Play beep sound
                 if (mediaPlayer != null) {
                     mediaPlayer.start();
                     Log.d(TAG, "Beep sound played.");

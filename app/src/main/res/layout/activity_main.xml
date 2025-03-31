@@ -38,6 +38,8 @@
         android:text="GET STARTED"
         android:textSize="18sp"
         android:backgroundTint="#ffffff"
+        android:fontFamily="Arial"
+        android:textFontWeight="600"
         android:textColor="#000000"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
