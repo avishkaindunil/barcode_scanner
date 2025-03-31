@@ -18,8 +18,8 @@ public class BarcodeOverlayView extends View {
     private final Paint contentRectPaint;
     private final Paint contentTextPaint;
     private final int contentPadding = 25;
-    private int previewWidth; // Ensure these are declared
-    private int previewHeight; // Ensure these are declared
+    private int previewWidth;
+    private int previewHeight;
 
     public BarcodeOverlayView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -51,23 +51,28 @@ public class BarcodeOverlayView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (barcodes != null) {
+        if (barcodes != null && previewWidth > 0 && previewHeight > 0) {
             for (Barcode barcode : barcodes) {
                 Rect boundingBox = barcode.getBoundingBox();
                 if (boundingBox != null) {
+                    // Calculate the scaling factors based on preview dimensions
                     float scaleX = getWidth() / (float) previewWidth;
                     float scaleY = getHeight() / (float) previewHeight;
 
+                    // Scale and translate the bounding box coordinates for rendering
                     float left = boundingBox.left * scaleX;
                     float top = boundingBox.top * scaleY;
                     float right = boundingBox.right * scaleX;
                     float bottom = boundingBox.bottom * scaleY;
 
+                    // Draw the bounding box on the canvas
                     canvas.drawRect(left, top, right, bottom, boundingRectPaint);
 
+                    // Calculate text width based on barcode content
                     String barcodeContent = barcode.getRawValue() != null ? barcode.getRawValue() : "";
                     float textWidth = contentTextPaint.measureText(barcodeContent);
 
+                    // Draw a filled rectangle below the bounding box to display barcode content
                     canvas.drawRect(
                             left,
                             bottom + contentPadding / 2,
@@ -76,6 +81,7 @@ public class BarcodeOverlayView extends View {
                             contentRectPaint
                     );
 
+                    // Draw barcode content text below bounding box
                     canvas.drawText(
                             barcodeContent,
                             left + contentPadding,
@@ -86,5 +92,4 @@ public class BarcodeOverlayView extends View {
             }
         }
     }
-
 }
