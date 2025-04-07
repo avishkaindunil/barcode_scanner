@@ -8,12 +8,10 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.google.mlkit.vision.barcode.common.Barcode;
-
 import java.util.List;
 
 public class BarcodeOverlayView extends View {
-    private List<Barcode> barcodes;
+    private List<MainActivity.StabilizedBarcode> barcodes;
     private final Paint boundingRectPaint;
     private final Paint contentRectPaint;
     private final Paint contentTextPaint;
@@ -41,7 +39,7 @@ public class BarcodeOverlayView extends View {
         contentTextPaint.setTextSize(36F);
     }
 
-    public void setBarcodes(List<Barcode> barcodes, int previewWidth, int previewHeight) {
+    public void setBarcodes(List<MainActivity.StabilizedBarcode> barcodes, int previewWidth, int previewHeight) {
         this.barcodes = barcodes;
         this.previewWidth = previewWidth;
         this.previewHeight = previewHeight;
@@ -52,43 +50,38 @@ public class BarcodeOverlayView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (barcodes != null && previewWidth > 0 && previewHeight > 0) {
-            for (Barcode barcode : barcodes) {
+            float scaleX = getWidth() / (float) previewWidth;
+            float scaleY = getHeight() / (float) previewHeight;
+
+            for (MainActivity.StabilizedBarcode barcode : barcodes) {
                 Rect boundingBox = barcode.getBoundingBox();
-                if (boundingBox != null) {
-                    // Calculate the scaling factors based on preview dimensions
-                    float scaleX = getWidth() / (float) previewWidth;
-                    float scaleY = getHeight() / (float) previewHeight;
+                float left = boundingBox.left * scaleX;
+                float top = boundingBox.top * scaleY;
+                float right = boundingBox.right * scaleX;
+                float bottom = boundingBox.bottom * scaleY;
 
-                    // Scale and translate the bounding box coordinates for rendering
-                    float left = boundingBox.left * scaleX;
-                    float top = boundingBox.top * scaleY;
-                    float right = boundingBox.right * scaleX;
-                    float bottom = boundingBox.bottom * scaleY;
+                // Draw the bounding box on the canvas
+                canvas.drawRect(left, top, right, bottom, boundingRectPaint);
 
-                    // Draw the bounding box on the canvas
-                    canvas.drawRect(left, top, right, bottom, boundingRectPaint);
+                // Draw barcode content text below bounding box
+                String barcodeContent = barcode.getValue();
+                float textWidth = contentTextPaint.measureText(barcodeContent);
 
-                    // Calculate text width based on barcode content
-                    String barcodeContent = barcode.getRawValue() != null ? barcode.getRawValue() : "";
-                    float textWidth = contentTextPaint.measureText(barcodeContent);
+                // Draw a filled rectangle below the bounding box to display barcode content
+                canvas.drawRect(
+                        left,
+                        bottom + contentPadding / 2,
+                        left + textWidth + contentPadding * 2,
+                        bottom + contentTextPaint.getTextSize() + contentPadding,
+                        contentRectPaint
+                );
 
-                    // Draw a filled rectangle below the bounding box to display barcode content
-                    canvas.drawRect(
-                            left,
-                            bottom + contentPadding / 2,
-                            left + textWidth + contentPadding * 2,
-                            bottom + contentTextPaint.getTextSize() + contentPadding,
-                            contentRectPaint
-                    );
-
-                    // Draw barcode content text below bounding box
-                    canvas.drawText(
-                            barcodeContent,
-                            left + contentPadding,
-                            bottom + contentPadding * 2 + contentTextPaint.getTextSize(),
-                            contentTextPaint
-                    );
-                }
+                canvas.drawText(
+                        barcodeContent,
+                        left + contentPadding,
+                        bottom + contentPadding * 2 + contentTextPaint.getTextSize(),
+                        contentTextPaint
+                );
             }
         }
     }
