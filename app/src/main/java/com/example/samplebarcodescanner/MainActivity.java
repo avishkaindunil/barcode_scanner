@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
 
     private static final float BASE_SMOOTHING_FACTOR = 0.90f;
-    private static final int INITIAL_HISTORY_SIZE = 9;
+    private static final int INITIAL_HISTORY_SIZE = 14;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -205,9 +205,9 @@ public class MainActivity extends AppCompatActivity {
 
     private int adjustHistorySize(float movement) {
         if (movement > 50) {
-            return 5; // Less history for rapid movement
+            return 7; // Less history for rapid movement
         } else {
-            return 9; // More history for stable conditions
+            return 14; // More history for stable conditions
         }
     }
 
