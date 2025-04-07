@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
         mediaPlayer = MediaPlayer.create(this, R.raw.beep);
 
-        cameraExecutor = Executors.newFixedThreadPool(8); // Maximize thread pool for concurrency
+        cameraExecutor = Executors.newFixedThreadPool(5); // Maximize thread pool for concurrency
         barcodeScanner = BarcodeScanning.getClient();
 
         imageCaptureButton.setOnClickListener(view -> {
