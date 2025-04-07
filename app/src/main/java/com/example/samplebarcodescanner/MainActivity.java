@@ -58,8 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
 
-    private static final float BASE_SMOOTHING_FACTOR = 0.90f;
-    private static final int INITIAL_HISTORY_SIZE = 14;
+    private static final float BASE_SMOOTHING_FACTOR = 0.3f; // Further reduced smoothing for more speed
+    private static final int INITIAL_HISTORY_SIZE = 3; // Minimal history size for fastest response
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
         mediaPlayer = MediaPlayer.create(this, R.raw.beep);
 
-        cameraExecutor = Executors.newSingleThreadExecutor();
+        cameraExecutor = Executors.newFixedThreadPool(4); // Increased thread pool size for better concurrency
         barcodeScanner = BarcodeScanning.getClient();
 
         imageCaptureButton.setOnClickListener(view -> {
@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
                     StabilizedBarcode stabilizedBarcode = trackedBarcodes.get(barcodeValue);
                     float movement = calculateMovement(stabilizedBarcode.getBoundingBox(), boundingBox);
                     int historySize = adjustHistorySize(movement);
-                    float smoothingFactor = BASE_SMOOTHING_FACTOR - Math.min(movement / 100, 0.2f);
+                    float smoothingFactor = BASE_SMOOTHING_FACTOR; // Maintain a lower value for responsiveness
                     stabilizedBarcode.update(boundingBox, smoothingFactor, historySize);
                 } else {
                     trackedBarcodes.put(barcodeValue, new StabilizedBarcode(barcodeValue, boundingBox, INITIAL_HISTORY_SIZE));
@@ -204,11 +204,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int adjustHistorySize(float movement) {
-        if (movement > 50) {
-            return 7; // Less history for rapid movement
-        } else {
-            return 14; // More history for stable conditions
-        }
+        return movement > 30 ? 2 : 3; // Minimal history for fastest response
     }
 
     private boolean allPermissionsGranted() {
