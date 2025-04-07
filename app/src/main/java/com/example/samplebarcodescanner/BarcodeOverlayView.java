@@ -7,11 +7,14 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
+import android.util.Log; // Ensure the Log class is imported
 
 import java.util.List;
+import java.util.Map;
 
 public class BarcodeOverlayView extends View {
     private List<MainActivity.StabilizedBarcode> barcodes;
+    private Map<String, Integer> barcodeColors;
     private final Paint boundingRectPaint;
     private final Paint contentRectPaint;
     private final Paint contentTextPaint;
@@ -24,7 +27,6 @@ public class BarcodeOverlayView extends View {
 
         boundingRectPaint = new Paint();
         boundingRectPaint.setStyle(Paint.Style.STROKE);
-        boundingRectPaint.setColor(Color.GREEN);
         boundingRectPaint.setStrokeWidth(5F);
         boundingRectPaint.setAlpha(200);
 
@@ -39,8 +41,9 @@ public class BarcodeOverlayView extends View {
         contentTextPaint.setTextSize(36F);
     }
 
-    public void setBarcodes(List<MainActivity.StabilizedBarcode> barcodes, int previewWidth, int previewHeight) {
+    public void setBarcodes(List<MainActivity.StabilizedBarcode> barcodes, Map<String, Integer> barcodeColors, int previewWidth, int previewHeight) {
         this.barcodes = barcodes;
+        this.barcodeColors = barcodeColors;
         this.previewWidth = previewWidth;
         this.previewHeight = previewHeight;
         invalidate(); // Request a redraw
@@ -59,6 +62,10 @@ public class BarcodeOverlayView extends View {
                 float top = boundingBox.top * scaleY;
                 float right = boundingBox.right * scaleX;
                 float bottom = boundingBox.bottom * scaleY;
+
+                // Set color for each barcode
+                int color = barcodeColors.getOrDefault(barcode.getValue(), Color.GREEN);
+                boundingRectPaint.setColor(color);
 
                 // Draw the bounding box on the canvas
                 canvas.drawRect(left, top, right, bottom, boundingRectPaint);
@@ -83,6 +90,9 @@ public class BarcodeOverlayView extends View {
                         contentTextPaint
                 );
             }
+        } else {
+            Log.d("BarcodeOverlayView", "No barcodes to draw");
         }
     }
 }
+

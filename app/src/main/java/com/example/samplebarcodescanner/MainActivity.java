@@ -26,6 +26,8 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.camera.view.PreviewView;
 
 import androidx.annotation.OptIn;
+import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.Rect;
 
 import com.google.mlkit.vision.barcode.common.Barcode;
@@ -39,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -57,12 +60,14 @@ public class MainActivity extends AppCompatActivity {
     private boolean isCaptureMode = false;
 
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
+    private Map<String, Integer> barcodeColors = new HashMap<>();
 
     private static final float BASE_SMOOTHING_FACTOR = 0.9f; // Further reduced for speed
-    private static final int INITIAL_HISTORY_SIZE = 5; // Minimal history for speed
-    private static final int FRAME_SKIP_INTERVAL = 1; // Skip every other frame for speed
+    private static final int INITIAL_HISTORY_SIZE = 5;
+    private static final int FRAME_SKIP_INTERVAL = 1; // Adjusted for speed
 
     private int frameCounter = 0;
+    private Random random = new Random();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
         mediaPlayer = MediaPlayer.create(this, R.raw.beep);
 
-        cameraExecutor = Executors.newFixedThreadPool(5); // Increased thread pool for maximum concurrency
+        cameraExecutor = Executors.newFixedThreadPool(5); // Maximize thread pool for concurrency
         barcodeScanner = BarcodeScanning.getClient();
 
         imageCaptureButton.setOnClickListener(view -> {
@@ -160,38 +165,49 @@ public class MainActivity extends AppCompatActivity {
 
     @OptIn(markerClass = ExperimentalGetImage.class)
     private void scanBarcodes(ImageProxy image) {
-        if (image.getImage() == null) {
+        try {
+            if (image.getImage() == null || image.getFormat() != ImageFormat.YUV_420_888) {
+                image.close();
+                return;
+            }
+
+            InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
+
+            barcodeScanner.process(inputImage)
+                    .addOnSuccessListener(this::processBarcodes)
+                    .addOnFailureListener(e -> Log.e(TAG, "Barcode scanning failed", e))
+                    .addOnCompleteListener(task -> image.close());
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing image", e);
             image.close();
-            return;
         }
-
-        // Skip frames to improve performance
-        if (frameCounter++ % FRAME_SKIP_INTERVAL != 0) {
-            image.close();
-            return;
-        }
-
-        InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
-
-        barcodeScanner.process(inputImage)
-                .addOnSuccessListener(this::processBarcodes)
-                .addOnFailureListener(e -> Log.e(TAG, "Barcode scanning failed", e))
-                .addOnCompleteListener(task -> image.close());
     }
 
     private void processBarcodes(List<Barcode> barcodes) {
+        Log.d(TAG, "Number of barcodes detected: " + barcodes.size());
+
+        if (barcodes.isEmpty()) {
+            Log.d(TAG, "No barcodes detected.");
+        }
+
         Map<String, StabilizedBarcode> currentBarcodes = new HashMap<>();
 
         for (Barcode barcode : barcodes) {
             if (barcode.getBoundingBox() != null) {
                 String barcodeValue = barcode.getRawValue();
+                if (barcodeValue == null) continue;
+
                 Rect boundingBox = barcode.getBoundingBox();
+
+                if (!barcodeColors.containsKey(barcodeValue)) {
+                    barcodeColors.put(barcodeValue, getRandomColor());
+                }
 
                 if (trackedBarcodes.containsKey(barcodeValue)) {
                     StabilizedBarcode stabilizedBarcode = trackedBarcodes.get(barcodeValue);
                     float movement = calculateMovement(stabilizedBarcode.getBoundingBox(), boundingBox);
                     int historySize = adjustHistorySize(movement);
-                    float smoothingFactor = BASE_SMOOTHING_FACTOR; // Maintain a lower value for responsiveness
+                    float smoothingFactor = BASE_SMOOTHING_FACTOR;
                     stabilizedBarcode.update(boundingBox, smoothingFactor, historySize);
                 } else {
                     trackedBarcodes.put(barcodeValue, new StabilizedBarcode(barcodeValue, boundingBox, INITIAL_HISTORY_SIZE));
@@ -204,7 +220,12 @@ public class MainActivity extends AppCompatActivity {
         trackedBarcodes = currentBarcodes;
 
         List<StabilizedBarcode> stabilizedBarcodes = new ArrayList<>(trackedBarcodes.values());
-        barcodeOverlayView.setBarcodes(stabilizedBarcodes, previewView.getWidth(), previewView.getHeight());
+        barcodeOverlayView.setBarcodes(stabilizedBarcodes, barcodeColors, previewView.getWidth(), previewView.getHeight());
+        barcodeOverlayView.invalidate(); // Force redraw of the overlay
+    }
+
+    private int getRandomColor() {
+        return Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256));
     }
 
     private float calculateMovement(Rect oldRect, Rect newRect) {
@@ -213,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int adjustHistorySize(float movement) {
-        return movement > 30 ? 1 : 5; // Minimal history for fastest response
+        return movement > 30 ? 1 : 5;
     }
 
     private boolean allPermissionsGranted() {
