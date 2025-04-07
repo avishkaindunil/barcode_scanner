@@ -58,8 +58,11 @@ public class MainActivity extends AppCompatActivity {
 
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
 
-    private static final float BASE_SMOOTHING_FACTOR = 0.3f; // Further reduced smoothing for more speed
-    private static final int INITIAL_HISTORY_SIZE = 3; // Minimal history size for fastest response
+    private static final float BASE_SMOOTHING_FACTOR = 0.2f; // Further reduced for speed
+    private static final int INITIAL_HISTORY_SIZE = 2; // Minimal history for speed
+    private static final int FRAME_SKIP_INTERVAL = 2; // Skip every other frame for speed
+
+    private int frameCounter = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
 
         mediaPlayer = MediaPlayer.create(this, R.raw.beep);
 
-        cameraExecutor = Executors.newFixedThreadPool(4); // Increased thread pool size for better concurrency
+        cameraExecutor = Executors.newFixedThreadPool(4); // Increased thread pool for maximum concurrency
         barcodeScanner = BarcodeScanning.getClient();
 
         imageCaptureButton.setOnClickListener(view -> {
@@ -162,6 +165,12 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // Skip frames to improve performance
+        if (frameCounter++ % FRAME_SKIP_INTERVAL != 0) {
+            image.close();
+            return;
+        }
+
         InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
 
         barcodeScanner.process(inputImage)
@@ -204,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int adjustHistorySize(float movement) {
-        return movement > 30 ? 2 : 3; // Minimal history for fastest response
+        return movement > 30 ? 1 : 2; // Minimal history for fastest response
     }
 
     private boolean allPermissionsGranted() {
