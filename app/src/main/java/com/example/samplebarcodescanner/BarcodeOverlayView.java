@@ -7,7 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
-import android.util.Log; // Ensure the Log class is imported
+import android.util.Log;
 
 import java.util.List;
 import java.util.Map;
@@ -95,4 +95,3 @@ public class BarcodeOverlayView extends View {
         }
     }
 }
-
