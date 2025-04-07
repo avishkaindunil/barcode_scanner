@@ -58,9 +58,9 @@ public class MainActivity extends AppCompatActivity {
 
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
 
-    private static final float BASE_SMOOTHING_FACTOR = 0.2f; // Further reduced for speed
-    private static final int INITIAL_HISTORY_SIZE = 2; // Minimal history for speed
-    private static final int FRAME_SKIP_INTERVAL = 2; // Skip every other frame for speed
+    private static final float BASE_SMOOTHING_FACTOR = 0.9f; // Further reduced for speed
+    private static final int INITIAL_HISTORY_SIZE = 5; // Minimal history for speed
+    private static final int FRAME_SKIP_INTERVAL = 1; // Skip every other frame for speed
 
     private int frameCounter = 0;
 
@@ -213,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int adjustHistorySize(float movement) {
-        return movement > 30 ? 1 : 2; // Minimal history for fastest response
+        return movement > 30 ? 1 : 5; // Minimal history for fastest response
     }
 
     private boolean allPermissionsGranted() {
