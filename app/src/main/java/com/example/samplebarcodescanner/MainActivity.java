@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
 
-    private static final float SMOOTHING_FACTOR = 0.9f; // Increased smoothing factor
+    private static final float SMOOTHING_FACTOR = 0.30f; // Adjusted smoothing factor
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
