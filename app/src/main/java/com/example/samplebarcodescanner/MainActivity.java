@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
 
-    private static final float SMOOTHING_FACTOR = 0.30f; // Adjusted smoothing factor
+    private static final float BASE_SMOOTHING_FACTOR = 0.30f; // Base smoothing factor
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -177,7 +177,10 @@ public class MainActivity extends AppCompatActivity {
                 Rect boundingBox = barcode.getBoundingBox();
 
                 if (trackedBarcodes.containsKey(barcodeValue)) {
-                    trackedBarcodes.get(barcodeValue).update(boundingBox, SMOOTHING_FACTOR);
+                    StabilizedBarcode stabilizedBarcode = trackedBarcodes.get(barcodeValue);
+                    float movement = calculateMovement(stabilizedBarcode.getBoundingBox(), boundingBox);
+                    float smoothingFactor = BASE_SMOOTHING_FACTOR - Math.min(movement / 100, 0.2f); // Adjust smoothing based on movement
+                    stabilizedBarcode.update(boundingBox, smoothingFactor);
                 } else {
                     trackedBarcodes.put(barcodeValue, new StabilizedBarcode(barcodeValue, boundingBox));
                 }
@@ -190,6 +193,11 @@ public class MainActivity extends AppCompatActivity {
 
         List<StabilizedBarcode> stabilizedBarcodes = new ArrayList<>(trackedBarcodes.values());
         barcodeOverlayView.setBarcodes(stabilizedBarcodes, previewView.getWidth(), previewView.getHeight());
+    }
+
+    private float calculateMovement(Rect oldRect, Rect newRect) {
+        return Math.abs(newRect.left - oldRect.left) + Math.abs(newRect.top - oldRect.top) +
+                Math.abs(newRect.right - oldRect.right) + Math.abs(newRect.bottom - oldRect.bottom);
     }
 
     private boolean allPermissionsGranted() {
@@ -245,10 +253,10 @@ public class MainActivity extends AppCompatActivity {
 
         void update(Rect boundingBox, float smoothingFactor) {
             // Only update if there's a significant change
-            if (Math.abs(boundingBox.left - left) > 5 ||
-                    Math.abs(boundingBox.top - top) > 5 ||
-                    Math.abs(boundingBox.right - right) > 5 ||
-                    Math.abs(boundingBox.bottom - bottom) > 5) {
+            if (Math.abs(boundingBox.left - left) > 2 ||
+                    Math.abs(boundingBox.top - top) > 2 ||
+                    Math.abs(boundingBox.right - right) > 2 ||
+                    Math.abs(boundingBox.bottom - bottom) > 2) {
 
                 this.left = smoothingFactor * boundingBox.left + (1 - smoothingFactor) * this.left;
                 this.top = smoothingFactor * boundingBox.top + (1 - smoothingFactor) * this.top;
