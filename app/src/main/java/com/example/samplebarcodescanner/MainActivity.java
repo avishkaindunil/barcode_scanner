@@ -58,8 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
 
-    private static final float BASE_SMOOTHING_FACTOR = 0.90f; // Base smoothing factor
-    private static final int HISTORY_SIZE = 9; // Number of frames to average over
+    private static final float BASE_SMOOTHING_FACTOR = 0.90f;
+    private static final int INITIAL_HISTORY_SIZE = 9;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -181,17 +181,18 @@ public class MainActivity extends AppCompatActivity {
                 if (trackedBarcodes.containsKey(barcodeValue)) {
                     StabilizedBarcode stabilizedBarcode = trackedBarcodes.get(barcodeValue);
                     float movement = calculateMovement(stabilizedBarcode.getBoundingBox(), boundingBox);
-                    float smoothingFactor = BASE_SMOOTHING_FACTOR - Math.min(movement / 100, 0.2f); // Adjust smoothing based on movement
-                    stabilizedBarcode.update(boundingBox, smoothingFactor);
+                    int historySize = adjustHistorySize(movement);
+                    float smoothingFactor = BASE_SMOOTHING_FACTOR - Math.min(movement / 100, 0.2f);
+                    stabilizedBarcode.update(boundingBox, smoothingFactor, historySize);
                 } else {
-                    trackedBarcodes.put(barcodeValue, new StabilizedBarcode(barcodeValue, boundingBox));
+                    trackedBarcodes.put(barcodeValue, new StabilizedBarcode(barcodeValue, boundingBox, INITIAL_HISTORY_SIZE));
                 }
 
                 currentBarcodes.put(barcodeValue, trackedBarcodes.get(barcodeValue));
             }
         }
 
-        trackedBarcodes = currentBarcodes; // Update tracked barcodes to only include current ones
+        trackedBarcodes = currentBarcodes;
 
         List<StabilizedBarcode> stabilizedBarcodes = new ArrayList<>(trackedBarcodes.values());
         barcodeOverlayView.setBarcodes(stabilizedBarcodes, previewView.getWidth(), previewView.getHeight());
@@ -200,6 +201,14 @@ public class MainActivity extends AppCompatActivity {
     private float calculateMovement(Rect oldRect, Rect newRect) {
         return Math.abs(newRect.left - oldRect.left) + Math.abs(newRect.top - oldRect.top) +
                 Math.abs(newRect.right - oldRect.right) + Math.abs(newRect.bottom - oldRect.bottom);
+    }
+
+    private int adjustHistorySize(float movement) {
+        if (movement > 50) {
+            return 5; // Less history for rapid movement
+        } else {
+            return 9; // More history for stable conditions
+        }
     }
 
     private boolean allPermissionsGranted() {
@@ -244,34 +253,30 @@ public class MainActivity extends AppCompatActivity {
         private float top;
         private float right;
         private float bottom;
-        private LinkedList<Rect> history = new LinkedList<>();
+        private LinkedList<Rect> history;
 
-        StabilizedBarcode(String value, Rect boundingBox) {
+        StabilizedBarcode(String value, Rect boundingBox, int historySize) {
             this.value = value;
             this.left = boundingBox.left;
             this.top = boundingBox.top;
             this.right = boundingBox.right;
             this.bottom = boundingBox.bottom;
-            addToHistory(boundingBox);
+            this.history = new LinkedList<>();
+            addToHistory(boundingBox, historySize);
         }
 
-        void update(Rect boundingBox, float smoothingFactor) {
-            // Add to history
-            addToHistory(boundingBox);
-
-            // Calculate average position from history
+        void update(Rect boundingBox, float smoothingFactor, int historySize) {
+            addToHistory(boundingBox, historySize);
             Rect averagedRect = averageHistory();
-
-            // Predictive smoothing
             this.left = smoothingFactor * averagedRect.left + (1 - smoothingFactor) * this.left;
             this.top = smoothingFactor * averagedRect.top + (1 - smoothingFactor) * this.top;
             this.right = smoothingFactor * averagedRect.right + (1 - smoothingFactor) * this.right;
             this.bottom = smoothingFactor * averagedRect.bottom + (1 - smoothingFactor) * this.bottom;
         }
 
-        private void addToHistory(Rect boundingBox) {
-            if (history.size() >= HISTORY_SIZE) {
-                history.removeFirst(); // Maintain the history size
+        private void addToHistory(Rect boundingBox, int historySize) {
+            if (history.size() >= historySize) {
+                history.removeFirst();
             }
             history.addLast(boundingBox);
         }
