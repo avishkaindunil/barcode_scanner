@@ -62,9 +62,9 @@ public class MainActivity extends AppCompatActivity {
     private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
     private Map<String, Integer> barcodeColors = new HashMap<>();
 
-    private static final float BASE_SMOOTHING_FACTOR = 0.9f; // Further reduced for speed
+    private static final float BASE_SMOOTHING_FACTOR = 0.9f;
     private static final int INITIAL_HISTORY_SIZE = 5;
-    private static final int FRAME_SKIP_INTERVAL = 1; // Adjusted for speed
+    private static final int FRAME_SKIP_INTERVAL = 1;
 
     private int frameCounter = 0;
     private Random random = new Random();
@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
         mediaPlayer = MediaPlayer.create(this, R.raw.beep);
 
-        cameraExecutor = Executors.newFixedThreadPool(5); // Maximize thread pool for concurrency
+        cameraExecutor = Executors.newFixedThreadPool(5);
         barcodeScanner = BarcodeScanning.getClient();
 
         imageCaptureButton.setOnClickListener(view -> {
@@ -221,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
         List<StabilizedBarcode> stabilizedBarcodes = new ArrayList<>(trackedBarcodes.values());
         barcodeOverlayView.setBarcodes(stabilizedBarcodes, barcodeColors, previewView.getWidth(), previewView.getHeight());
-        barcodeOverlayView.invalidate(); // Force redraw of the overlay
+        barcodeOverlayView.invalidate();
     }
 
     private int getRandomColor() {
@@ -317,10 +317,10 @@ public class MainActivity extends AppCompatActivity {
             }
             int count = history.size();
             return new Rect(
-                    (int)(sumLeft / count),
-                    (int)(sumTop / count),
-                    (int)(sumRight / count),
-                    (int)(sumBottom / count)
+                    (int) (sumLeft / count),
+                    (int) (sumTop / count),
+                    (int) (sumRight / count),
+                    (int) (sumBottom / count)
             );
         }
 
