@@ -63,7 +63,7 @@ public class BarcodeOverlayView extends View {
                 float right = boundingBox.right * scaleX;
                 float bottom = boundingBox.bottom * scaleY;
 
-                // Set color for each barcode
+                // Set color for each barcode using consistent color mapping
                 int color = barcodeColors.getOrDefault(barcode.getValue(), Color.GREEN);
                 boundingRectPaint.setColor(color);
 

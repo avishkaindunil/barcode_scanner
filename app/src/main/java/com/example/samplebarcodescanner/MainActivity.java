@@ -59,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
     private boolean isCaptureMode = false;
 
-    private Map<String, StabilizedBarcode> trackedBarcodes = new HashMap<>();
     private Map<String, Integer> barcodeColors = new HashMap<>();
 
     private static final float BASE_SMOOTHING_FACTOR = 0.9f;
@@ -186,11 +185,7 @@ public class MainActivity extends AppCompatActivity {
     private void processBarcodes(List<Barcode> barcodes) {
         Log.d(TAG, "Number of barcodes detected: " + barcodes.size());
 
-        if (barcodes.isEmpty()) {
-            Log.d(TAG, "No barcodes detected.");
-        }
-
-        Map<String, StabilizedBarcode> currentBarcodes = new HashMap<>();
+        List<StabilizedBarcode> stabilizedBarcodes = new ArrayList<>();
 
         for (Barcode barcode : barcodes) {
             if (barcode.getBoundingBox() != null) {
@@ -199,42 +194,20 @@ public class MainActivity extends AppCompatActivity {
 
                 Rect boundingBox = barcode.getBoundingBox();
 
-                if (!barcodeColors.containsKey(barcodeValue)) {
-                    barcodeColors.put(barcodeValue, getRandomColor());
-                }
+                // Ensure that barcode colors are consistently assigned
+                barcodeColors.putIfAbsent(barcodeValue, getRandomColor());
 
-                if (trackedBarcodes.containsKey(barcodeValue)) {
-                    StabilizedBarcode stabilizedBarcode = trackedBarcodes.get(barcodeValue);
-                    float movement = calculateMovement(stabilizedBarcode.getBoundingBox(), boundingBox);
-                    int historySize = adjustHistorySize(movement);
-                    float smoothingFactor = BASE_SMOOTHING_FACTOR;
-                    stabilizedBarcode.update(boundingBox, smoothingFactor, historySize);
-                } else {
-                    trackedBarcodes.put(barcodeValue, new StabilizedBarcode(barcodeValue, boundingBox, INITIAL_HISTORY_SIZE));
-                }
-
-                currentBarcodes.put(barcodeValue, trackedBarcodes.get(barcodeValue));
+                StabilizedBarcode stabilizedBarcode = new StabilizedBarcode(barcodeValue, boundingBox, INITIAL_HISTORY_SIZE);
+                stabilizedBarcodes.add(stabilizedBarcode);
             }
         }
 
-        trackedBarcodes = currentBarcodes;
-
-        List<StabilizedBarcode> stabilizedBarcodes = new ArrayList<>(trackedBarcodes.values());
         barcodeOverlayView.setBarcodes(stabilizedBarcodes, barcodeColors, previewView.getWidth(), previewView.getHeight());
         barcodeOverlayView.invalidate();
     }
 
     private int getRandomColor() {
         return Color.rgb(random.nextInt(256), random.nextInt(256), random.nextInt(256));
-    }
-
-    private float calculateMovement(Rect oldRect, Rect newRect) {
-        return Math.abs(newRect.left - oldRect.left) + Math.abs(newRect.top - oldRect.top) +
-                Math.abs(newRect.right - oldRect.right) + Math.abs(newRect.bottom - oldRect.bottom);
-    }
-
-    private int adjustHistorySize(float movement) {
-        return movement > 30 ? 1 : 5;
     }
 
     private boolean allPermissionsGranted() {
@@ -275,57 +248,15 @@ public class MainActivity extends AppCompatActivity {
 
     public static class StabilizedBarcode {
         private final String value;
-        private float left;
-        private float top;
-        private float right;
-        private float bottom;
-        private LinkedList<Rect> history;
+        private final Rect boundingBox;
 
         StabilizedBarcode(String value, Rect boundingBox, int historySize) {
             this.value = value;
-            this.left = boundingBox.left;
-            this.top = boundingBox.top;
-            this.right = boundingBox.right;
-            this.bottom = boundingBox.bottom;
-            this.history = new LinkedList<>();
-            addToHistory(boundingBox, historySize);
-        }
-
-        void update(Rect boundingBox, float smoothingFactor, int historySize) {
-            addToHistory(boundingBox, historySize);
-            Rect averagedRect = averageHistory();
-            this.left = smoothingFactor * averagedRect.left + (1 - smoothingFactor) * this.left;
-            this.top = smoothingFactor * averagedRect.top + (1 - smoothingFactor) * this.top;
-            this.right = smoothingFactor * averagedRect.right + (1 - smoothingFactor) * this.right;
-            this.bottom = smoothingFactor * averagedRect.bottom + (1 - smoothingFactor) * this.bottom;
-        }
-
-        private void addToHistory(Rect boundingBox, int historySize) {
-            if (history.size() >= historySize) {
-                history.removeFirst();
-            }
-            history.addLast(boundingBox);
-        }
-
-        private Rect averageHistory() {
-            float sumLeft = 0, sumTop = 0, sumRight = 0, sumBottom = 0;
-            for (Rect rect : history) {
-                sumLeft += rect.left;
-                sumTop += rect.top;
-                sumRight += rect.right;
-                sumBottom += rect.bottom;
-            }
-            int count = history.size();
-            return new Rect(
-                    (int) (sumLeft / count),
-                    (int) (sumTop / count),
-                    (int) (sumRight / count),
-                    (int) (sumBottom / count)
-            );
+            this.boundingBox = boundingBox;
         }
 
         Rect getBoundingBox() {
-            return new Rect((int) left, (int) top, (int) right, (int) bottom);
+            return boundingBox;
         }
 
         String getValue() {
