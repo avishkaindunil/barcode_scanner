@@ -10,6 +10,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import android.graphics.Color;
+import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import androidx.annotation.OptIn;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,15 +24,10 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
-import androidx.camera.view.PreviewView;
-
-import androidx.annotation.OptIn;
-import android.graphics.Color;
-import android.graphics.ImageFormat;
-import android.graphics.Rect;
 
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
@@ -314,7 +313,7 @@ public class MainActivity extends AppCompatActivity {
                     {0, 0, 1, 0},
                     {0, 0, 0, 1}
             };
-            processNoise = 1e-3f;  // Lower noise for better prediction stability
+            processNoise = 1e-3f;  // Adjusted for smoother tracking
             measurementNoise = 1e-1f;
         }
 
@@ -326,8 +325,8 @@ public class MainActivity extends AppCompatActivity {
 
             // Update step
             float[] measurementVec = new float[]{measurement.left, measurement.top, measurement.right, measurement.bottom};
-            float[] kalmanGain = new float[state.length];
-            for (int i = 0; i < kalmanGain.length; i++) {
+            float[] kalmanGain = new float[state.length];  // Calculate Kalman gain for each state
+            for (int i = 0; i < state.length; i++) {
                 kalmanGain[i] = errorCovariance[i][i] / (errorCovariance[i][i] + measurementNoise);
             }
 
