@@ -59,13 +59,12 @@ public class MainActivity extends AppCompatActivity {
     private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
     private boolean isCaptureMode = false;
 
+    private Map<String, List<StabilizedBarcode>> trackedBarcodes = new HashMap<>();
     private Map<String, Integer> barcodeColors = new HashMap<>();
 
-    private static final float BASE_SMOOTHING_FACTOR = 0.9f;
-    private static final int INITIAL_HISTORY_SIZE = 5;
-    private static final int FRAME_SKIP_INTERVAL = 1;
+    private static final float SMOOTHING_FACTOR = 0.9f;
+    private static final int HISTORY_SIZE = 10;
 
-    private int frameCounter = 0;
     private Random random = new Random();
 
     @Override
@@ -185,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
     private void processBarcodes(List<Barcode> barcodes) {
         Log.d(TAG, "Number of barcodes detected: " + barcodes.size());
 
-        List<StabilizedBarcode> stabilizedBarcodes = new ArrayList<>();
+        Map<String, List<StabilizedBarcode>> currentBarcodes = new HashMap<>();
 
         for (Barcode barcode : barcodes) {
             if (barcode.getBoundingBox() != null) {
@@ -194,15 +193,44 @@ public class MainActivity extends AppCompatActivity {
 
                 Rect boundingBox = barcode.getBoundingBox();
 
-                // Ensure that barcode colors are consistently assigned
                 barcodeColors.putIfAbsent(barcodeValue, getRandomColor());
 
-                StabilizedBarcode stabilizedBarcode = new StabilizedBarcode(barcodeValue, boundingBox, INITIAL_HISTORY_SIZE);
-                stabilizedBarcodes.add(stabilizedBarcode);
+                StabilizedBarcode stabilizedBarcode = new StabilizedBarcode(barcodeValue, boundingBox, HISTORY_SIZE);
+                if (trackedBarcodes.containsKey(barcodeValue)) {
+                    List<StabilizedBarcode> existingBarcodes = trackedBarcodes.get(barcodeValue);
+                    boolean matched = false;
+                    for (StabilizedBarcode existing : existingBarcodes) {
+                        if (existing.isCloseTo(stabilizedBarcode)) {
+                            existing.update(boundingBox, SMOOTHING_FACTOR);
+                            matched = true;
+                            if (!currentBarcodes.containsKey(barcodeValue)) {
+                                currentBarcodes.put(barcodeValue, new ArrayList<>());
+                            }
+                            currentBarcodes.get(barcodeValue).add(existing);
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        if (!currentBarcodes.containsKey(barcodeValue)) {
+                            currentBarcodes.put(barcodeValue, new ArrayList<>());
+                        }
+                        currentBarcodes.get(barcodeValue).add(stabilizedBarcode);
+                    }
+                } else {
+                    List<StabilizedBarcode> newList = new ArrayList<>();
+                    newList.add(stabilizedBarcode);
+                    currentBarcodes.put(barcodeValue, newList);
+                }
             }
         }
 
-        barcodeOverlayView.setBarcodes(stabilizedBarcodes, barcodeColors, previewView.getWidth(), previewView.getHeight());
+        trackedBarcodes = currentBarcodes;
+
+        List<StabilizedBarcode> allStabilizedBarcodes = new ArrayList<>();
+        for (List<StabilizedBarcode> barcodeList : trackedBarcodes.values()) {
+            allStabilizedBarcodes.addAll(barcodeList);
+        }
+        barcodeOverlayView.setBarcodes(allStabilizedBarcodes, barcodeColors, previewView.getWidth(), previewView.getHeight());
         barcodeOverlayView.invalidate();
     }
 
@@ -248,19 +276,68 @@ public class MainActivity extends AppCompatActivity {
 
     public static class StabilizedBarcode {
         private final String value;
-        private final Rect boundingBox;
+        private float left;
+        private float top;
+        private float right;
+        private float bottom;
+        private LinkedList<Rect> history;
 
         StabilizedBarcode(String value, Rect boundingBox, int historySize) {
             this.value = value;
-            this.boundingBox = boundingBox;
+            this.left = boundingBox.left;
+            this.top = boundingBox.top;
+            this.right = boundingBox.right;
+            this.bottom = boundingBox.bottom;
+            this.history = new LinkedList<>();
+            addToHistory(boundingBox, historySize);
+        }
+
+        void update(Rect boundingBox, float smoothingFactor) {
+            addToHistory(boundingBox, HISTORY_SIZE);
+            Rect averagedRect = averageHistory();
+            this.left = smoothingFactor * averagedRect.left + (1 - smoothingFactor) * this.left;
+            this.top = smoothingFactor * averagedRect.top + (1 - smoothingFactor) * this.top;
+            this.right = smoothingFactor * averagedRect.right + (1 - smoothingFactor) * this.right;
+            this.bottom = smoothingFactor * averagedRect.bottom + (1 - smoothingFactor) * this.bottom;
+        }
+
+        private void addToHistory(Rect boundingBox, int historySize) {
+            if (history.size() >= historySize) {
+                history.removeFirst();
+            }
+            history.addLast(boundingBox);
+        }
+
+        private Rect averageHistory() {
+            float sumLeft = 0, sumTop = 0, sumRight = 0, sumBottom = 0;
+            for (Rect rect : history) {
+                sumLeft += rect.left;
+                sumTop += rect.top;
+                sumRight += rect.right;
+                sumBottom += rect.bottom;
+            }
+            int count = history.size();
+            return new Rect(
+                    (int) (sumLeft / count),
+                    (int) (sumTop / count),
+                    (int) (sumRight / count),
+                    (int) (sumBottom / count)
+            );
         }
 
         Rect getBoundingBox() {
-            return boundingBox;
+            return new Rect((int) left, (int) top, (int) right, (int) bottom);
         }
 
         String getValue() {
             return value;
+        }
+
+        boolean isCloseTo(StabilizedBarcode other) {
+            return Math.abs(this.left - other.left) < 50 &&
+                    Math.abs(this.top - other.top) < 50 &&
+                    Math.abs(this.right - other.right) < 50 &&
+                    Math.abs(this.bottom - other.bottom) < 50;
         }
     }
 }

@@ -27,7 +27,7 @@ public class BarcodeOverlayView extends View {
 
         boundingRectPaint = new Paint();
         boundingRectPaint.setStyle(Paint.Style.STROKE);
-        boundingRectPaint.setStrokeWidth(5F);
+        boundingRectPaint.setStrokeWidth(10F);
         boundingRectPaint.setAlpha(200);
 
         contentRectPaint = new Paint();
