@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
         mediaPlayer = MediaPlayer.create(this, R.raw.beep);
 
-        cameraExecutor = Executors.newFixedThreadPool(5);
+        cameraExecutor = Executors.newFixedThreadPool(10);
         barcodeScanner = BarcodeScanning.getClient();
 
         imageCaptureButton.setOnClickListener(view -> {
