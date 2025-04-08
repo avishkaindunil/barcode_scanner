@@ -38,7 +38,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -61,12 +60,6 @@ public class MainActivity extends AppCompatActivity {
 
     private Map<String, List<StabilizedBarcode>> trackedBarcodes = new HashMap<>();
     private Map<String, Integer> barcodeColors = new HashMap<>();
-
-    private static final float SMOOTHING_FACTOR = 0.75f;
-    private static final int BASE_HISTORY_SIZE = 10;
-    private static final int MAX_HISTORY_SIZE = 20;
-    private static final int DISTANCE_THRESHOLD = 50;
-
     private Random random = new Random();
 
     @Override
@@ -197,14 +190,13 @@ public class MainActivity extends AppCompatActivity {
 
                 barcodeColors.putIfAbsent(barcodeValue, getRandomColor());
 
-                StabilizedBarcode stabilizedBarcode = new StabilizedBarcode(barcodeValue, boundingBox, BASE_HISTORY_SIZE);
+                StabilizedBarcode stabilizedBarcode = new StabilizedBarcode(barcodeValue, boundingBox);
                 if (trackedBarcodes.containsKey(barcodeValue)) {
                     List<StabilizedBarcode> existingBarcodes = trackedBarcodes.get(barcodeValue);
                     boolean matched = false;
                     for (StabilizedBarcode existing : existingBarcodes) {
                         if (existing.isCloseTo(stabilizedBarcode)) {
-                            int adjustedHistorySize = adjustHistorySize(existing, boundingBox);
-                            existing.update(boundingBox, SMOOTHING_FACTOR, adjustedHistorySize);
+                            existing.update(boundingBox);
                             matched = true;
                             if (!currentBarcodes.containsKey(barcodeValue)) {
                                 currentBarcodes.put(barcodeValue, new ArrayList<>());
@@ -250,15 +242,6 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    private int adjustHistorySize(StabilizedBarcode existing, Rect newRect) {
-        float movement = existing.calculateMovement(newRect);
-        if (movement > DISTANCE_THRESHOLD) {
-            return Math.min(BASE_HISTORY_SIZE, MAX_HISTORY_SIZE);
-        } else {
-            return BASE_HISTORY_SIZE;
-        }
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -288,57 +271,21 @@ public class MainActivity extends AppCompatActivity {
 
     public static class StabilizedBarcode {
         private final String value;
-        private float left;
-        private float top;
-        private float right;
-        private float bottom;
-        private LinkedList<Rect> history;
+        private KalmanFilter kalmanFilter;
+        private Rect boundingBox;
 
-        StabilizedBarcode(String value, Rect boundingBox, int historySize) {
+        StabilizedBarcode(String value, Rect boundingBox) {
             this.value = value;
-            this.left = boundingBox.left;
-            this.top = boundingBox.top;
-            this.right = boundingBox.right;
-            this.bottom = boundingBox.bottom;
-            this.history = new LinkedList<>();
-            addToHistory(boundingBox, historySize);
+            this.boundingBox = boundingBox;
+            this.kalmanFilter = new KalmanFilter(boundingBox);
         }
 
-        void update(Rect boundingBox, float smoothingFactor, int historySize) {
-            addToHistory(boundingBox, historySize);
-            Rect averagedRect = averageHistory();
-            this.left = smoothingFactor * averagedRect.left + (1 - smoothingFactor) * this.left;
-            this.top = smoothingFactor * averagedRect.top + (1 - smoothingFactor) * this.top;
-            this.right = smoothingFactor * averagedRect.right + (1 - smoothingFactor) * this.right;
-            this.bottom = smoothingFactor * averagedRect.bottom + (1 - smoothingFactor) * this.bottom;
-        }
-
-        private void addToHistory(Rect boundingBox, int historySize) {
-            if (history.size() >= historySize) {
-                history.removeFirst();
-            }
-            history.addLast(boundingBox);
-        }
-
-        private Rect averageHistory() {
-            float sumLeft = 0, sumTop = 0, sumRight = 0, sumBottom = 0;
-            for (Rect rect : history) {
-                sumLeft += rect.left;
-                sumTop += rect.top;
-                sumRight += rect.right;
-                sumBottom += rect.bottom;
-            }
-            int count = history.size();
-            return new Rect(
-                    (int) (sumLeft / count),
-                    (int) (sumTop / count),
-                    (int) (sumRight / count),
-                    (int) (sumBottom / count)
-            );
+        void update(Rect newBoundingBox) {
+            this.boundingBox = kalmanFilter.predictAndUpdate(newBoundingBox);
         }
 
         Rect getBoundingBox() {
-            return new Rect((int) left, (int) top, (int) right, (int) bottom);
+            return boundingBox;
         }
 
         String getValue() {
@@ -346,15 +293,50 @@ public class MainActivity extends AppCompatActivity {
         }
 
         boolean isCloseTo(StabilizedBarcode other) {
-            return Math.abs(this.left - other.left) < DISTANCE_THRESHOLD &&
-                    Math.abs(this.top - other.top) < DISTANCE_THRESHOLD &&
-                    Math.abs(this.right - other.right) < DISTANCE_THRESHOLD &&
-                    Math.abs(this.bottom - other.bottom) < DISTANCE_THRESHOLD;
+            return Math.abs(this.boundingBox.left - other.boundingBox.left) < 50 &&
+                    Math.abs(this.boundingBox.top - other.boundingBox.top) < 50 &&
+                    Math.abs(this.boundingBox.right - other.boundingBox.right) < 50 &&
+                    Math.abs(this.boundingBox.bottom - other.boundingBox.bottom) < 50;
+        }
+    }
+
+    public static class KalmanFilter {
+        private float[] state;  // [left, top, right, bottom]
+        private float[][] errorCovariance;
+        private float processNoise;
+        private float measurementNoise;
+
+        public KalmanFilter(Rect initial) {
+            state = new float[]{initial.left, initial.top, initial.right, initial.bottom};
+            errorCovariance = new float[][]{
+                    {1, 0, 0, 0},
+                    {0, 1, 0, 0},
+                    {0, 0, 1, 0},
+                    {0, 0, 0, 1}
+            };
+            processNoise = 1e-3f;  // Lower noise for better prediction stability
+            measurementNoise = 1e-1f;
         }
 
-        float calculateMovement(Rect newRect) {
-            return Math.abs(newRect.left - this.left) + Math.abs(newRect.top - this.top) +
-                    Math.abs(newRect.right - this.right) + Math.abs(newRect.bottom - this.bottom);
+        public Rect predictAndUpdate(Rect measurement) {
+            // Prediction step
+            for (int i = 0; i < state.length; i++) {
+                errorCovariance[i][i] += processNoise;
+            }
+
+            // Update step
+            float[] measurementVec = new float[]{measurement.left, measurement.top, measurement.right, measurement.bottom};
+            float[] kalmanGain = new float[state.length];
+            for (int i = 0; i < kalmanGain.length; i++) {
+                kalmanGain[i] = errorCovariance[i][i] / (errorCovariance[i][i] + measurementNoise);
+            }
+
+            for (int i = 0; i < state.length; i++) {
+                state[i] = state[i] + kalmanGain[i] * (measurementVec[i] - state[i]);
+                errorCovariance[i][i] = (1 - kalmanGain[i]) * errorCovariance[i][i];
+            }
+
+            return new Rect((int) state[0], (int) state[1], (int) state[2], (int) state[3]);
         }
     }
 }
