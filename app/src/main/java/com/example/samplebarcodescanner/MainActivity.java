@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.view.MenuItem;
+import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -292,10 +293,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         boolean isCloseTo(StabilizedBarcode other) {
-            return Math.abs(this.boundingBox.left - other.boundingBox.left) < 50 &&
-                    Math.abs(this.boundingBox.top - other.boundingBox.top) < 50 &&
-                    Math.abs(this.boundingBox.right - other.boundingBox.right) < 50 &&
-                    Math.abs(this.boundingBox.bottom - other.boundingBox.bottom) < 50;
+            return Math.abs(this.boundingBox.left - other.boundingBox.left) < 30 &&
+                    Math.abs(this.boundingBox.top - other.boundingBox.top) < 30 &&
+                    Math.abs(this.boundingBox.right - other.boundingBox.right) < 30 &&
+                    Math.abs(this.boundingBox.bottom - other.boundingBox.bottom) < 30;
         }
     }
 
@@ -313,8 +314,9 @@ public class MainActivity extends AppCompatActivity {
                     {0, 0, 1, 0},
                     {0, 0, 0, 1}
             };
-            processNoise = 1e-3f;  // Adjusted for smoother tracking
-            measurementNoise = 1e-1f;
+            // Adjusting process and measurement noise for better stability
+            processNoise = 1e-5f;  // Reduced process noise for smoother tracking
+            measurementNoise = 1e-3f; // Reduced measurement noise to expect less variation
         }
 
         public Rect predictAndUpdate(Rect measurement) {
