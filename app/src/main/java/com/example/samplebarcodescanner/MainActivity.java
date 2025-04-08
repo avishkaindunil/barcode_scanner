@@ -62,8 +62,10 @@ public class MainActivity extends AppCompatActivity {
     private Map<String, List<StabilizedBarcode>> trackedBarcodes = new HashMap<>();
     private Map<String, Integer> barcodeColors = new HashMap<>();
 
-    private static final float SMOOTHING_FACTOR = 0.9f;
-    private static final int HISTORY_SIZE = 10;
+    private static final float SMOOTHING_FACTOR = 0.75f;
+    private static final int BASE_HISTORY_SIZE = 10;
+    private static final int MAX_HISTORY_SIZE = 20;
+    private static final int DISTANCE_THRESHOLD = 50;
 
     private Random random = new Random();
 
@@ -195,13 +197,14 @@ public class MainActivity extends AppCompatActivity {
 
                 barcodeColors.putIfAbsent(barcodeValue, getRandomColor());
 
-                StabilizedBarcode stabilizedBarcode = new StabilizedBarcode(barcodeValue, boundingBox, HISTORY_SIZE);
+                StabilizedBarcode stabilizedBarcode = new StabilizedBarcode(barcodeValue, boundingBox, BASE_HISTORY_SIZE);
                 if (trackedBarcodes.containsKey(barcodeValue)) {
                     List<StabilizedBarcode> existingBarcodes = trackedBarcodes.get(barcodeValue);
                     boolean matched = false;
                     for (StabilizedBarcode existing : existingBarcodes) {
                         if (existing.isCloseTo(stabilizedBarcode)) {
-                            existing.update(boundingBox, SMOOTHING_FACTOR);
+                            int adjustedHistorySize = adjustHistorySize(existing, boundingBox);
+                            existing.update(boundingBox, SMOOTHING_FACTOR, adjustedHistorySize);
                             matched = true;
                             if (!currentBarcodes.containsKey(barcodeValue)) {
                                 currentBarcodes.put(barcodeValue, new ArrayList<>());
@@ -245,6 +248,15 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return true;
+    }
+
+    private int adjustHistorySize(StabilizedBarcode existing, Rect newRect) {
+        float movement = existing.calculateMovement(newRect);
+        if (movement > DISTANCE_THRESHOLD) {
+            return Math.min(BASE_HISTORY_SIZE, MAX_HISTORY_SIZE);
+        } else {
+            return BASE_HISTORY_SIZE;
+        }
     }
 
     @Override
@@ -292,8 +304,8 @@ public class MainActivity extends AppCompatActivity {
             addToHistory(boundingBox, historySize);
         }
 
-        void update(Rect boundingBox, float smoothingFactor) {
-            addToHistory(boundingBox, HISTORY_SIZE);
+        void update(Rect boundingBox, float smoothingFactor, int historySize) {
+            addToHistory(boundingBox, historySize);
             Rect averagedRect = averageHistory();
             this.left = smoothingFactor * averagedRect.left + (1 - smoothingFactor) * this.left;
             this.top = smoothingFactor * averagedRect.top + (1 - smoothingFactor) * this.top;
@@ -334,10 +346,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         boolean isCloseTo(StabilizedBarcode other) {
-            return Math.abs(this.left - other.left) < 50 &&
-                    Math.abs(this.top - other.top) < 50 &&
-                    Math.abs(this.right - other.right) < 50 &&
-                    Math.abs(this.bottom - other.bottom) < 50;
+            return Math.abs(this.left - other.left) < DISTANCE_THRESHOLD &&
+                    Math.abs(this.top - other.top) < DISTANCE_THRESHOLD &&
+                    Math.abs(this.right - other.right) < DISTANCE_THRESHOLD &&
+                    Math.abs(this.bottom - other.bottom) < DISTANCE_THRESHOLD;
+        }
+
+        float calculateMovement(Rect newRect) {
+            return Math.abs(newRect.left - this.left) + Math.abs(newRect.top - this.top) +
+                    Math.abs(newRect.right - this.right) + Math.abs(newRect.bottom - this.bottom);
         }
     }
 }
