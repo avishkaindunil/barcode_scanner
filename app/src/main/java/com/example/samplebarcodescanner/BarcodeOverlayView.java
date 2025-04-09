@@ -51,11 +51,11 @@ public class BarcodeOverlayView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        long startTime = System.nanoTime(); // Start time before onDraw
+        long startTime = System.nanoTime();
 
         super.onDraw(canvas);
 
-        long beforeDrawingTime = System.nanoTime(); // Time after super.onDraw and before drawing
+        //long beforeDrawingTime = System.nanoTime();
 
         if (barcodes != null && previewWidth > 0 && previewHeight > 0) {
             float scaleX = getWidth() / (float) previewWidth;
@@ -99,14 +99,12 @@ public class BarcodeOverlayView extends View {
             Log.d("BarcodeOverlayView", "No barcodes to draw");
         }
 
-        long endTime = System.nanoTime(); // Time after drawing
+        long endTime = System.nanoTime();
 
-        // Log the time before drawing operations
-        long beforeDrawingDuration = (beforeDrawingTime - startTime) / 1000; // Convert to microseconds
-        Log.d("BarcodeOverlayView", "Time before onDraw drawing: " + beforeDrawingDuration + " μs");
+        // long beforeDrawingDuration = (beforeDrawingTime - startTime) / 1000;
+        // Log.d("BarcodeOverlayView", "Time before onDraw drawing: " + beforeDrawingDuration + " μs");
 
-        // Log the time of the complete onDraw execution
-        long totalDuration = (endTime - startTime) / 1000; // Convert to microseconds
+        long totalDuration = (endTime - startTime) / 1000;
         Log.d("BarcodeOverlayView", "Total onDraw execution time: " + totalDuration + " μs");
     }
 }
