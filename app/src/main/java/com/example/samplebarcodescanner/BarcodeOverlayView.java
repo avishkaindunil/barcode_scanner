@@ -16,6 +16,7 @@ import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ public class BarcodeOverlayView extends View {
     private int previewHeight;
     private Context context; // Reference for context to show the menu
     private Bitmap currentFrameBitmap; // Temporary storage for the barcode image
+    private Map<String, PopupWindow> activePopups = new HashMap<>(); // Track active popups for each barcode
 
     public BarcodeOverlayView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -129,6 +131,12 @@ public class BarcodeOverlayView extends View {
 
                 // Save the clickable region for the plus icon
                 barcode.setIconBounds(centerX, centerY, 50); // Save icon bounds for touch detection
+
+                // Update popup position if it exists
+                if (activePopups.containsKey(barcode.getValue())) {
+                    PopupWindow popupWindow = activePopups.get(barcode.getValue());
+                    popupWindow.update((int) left, (int) bottom, -1, -1);
+                }
             }
         } else {
             Log.d("BarcodeOverlayView", "No barcodes to draw");
@@ -193,6 +201,11 @@ public class BarcodeOverlayView extends View {
     }
 
     private void showBarcodeMenu(MainActivity.StabilizedBarcode barcode) {
+        // Check if the popup already exists
+        if (activePopups.containsKey(barcode.getValue())) {
+            return; // Do not create a new popup
+        }
+
         // Create a popup window for the menu
         PopupWindow popupWindow = new PopupWindow(context);
         popupWindow.setWidth(700);
@@ -221,7 +234,15 @@ public class BarcodeOverlayView extends View {
 
         popupWindow.setContentView(menuView);
 
-        // Show the menu at the center of the screen
-        popupWindow.showAtLocation(this, 0, getWidth() / 2, getHeight() / 2);
+        // Show the menu at the bounding box position
+        Rect boundingBox = barcode.getBoundingBox();
+        float scaleX = getWidth() / (float) previewWidth;
+        float scaleY = getHeight() / (float) previewHeight;
+
+        int popupX = (int) (boundingBox.left * scaleX);
+        int popupY = (int) (boundingBox.bottom * scaleY);
+        popupWindow.showAtLocation(this, 0, popupX, popupY);
+
+        activePopups.put(barcode.getValue(), popupWindow); // Track the active popup
     }
 }
