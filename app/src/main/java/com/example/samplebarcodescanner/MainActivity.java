@@ -39,6 +39,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -129,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
         Preview preview = new Preview.Builder()
-                .setTargetResolution(new Size(1080, 1920)) // Higher resolution for distant barcodes
+                .setTargetResolution(new Size(1080, 1920)) // Resolution for barcode detection
                 .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
@@ -137,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(new Size(1080, 1920)) // Higher resolution for improved detection
+                .setTargetResolution(new Size(1080, 1920)) // Resolution for barcode detection
                 .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
@@ -274,31 +275,37 @@ public class MainActivity extends AppCompatActivity {
         private final String value;
         private KalmanFilter kalmanFilter;
         private Rect boundingBox;
-        private RectF iconBounds; // Icon bounds for click detection
+        private RectF iconBounds;
+        private LinkedList<Rect> boundingBoxHistory = new LinkedList<>();
+        private static final int SMOOTHING_WINDOW_SIZE = 10; // Number of frames for stabilization
 
         StabilizedBarcode(String value, Rect boundingBox) {
             this.value = value;
             this.boundingBox = boundingBox;
             this.kalmanFilter = new KalmanFilter(boundingBox);
+            boundingBoxHistory.add(boundingBox);
         }
 
         void update(Rect newBoundingBox) {
-            this.boundingBox = kalmanFilter.predictAndUpdate(newBoundingBox);
+            if (boundingBoxHistory.size() >= SMOOTHING_WINDOW_SIZE) {
+                boundingBoxHistory.poll();
+            }
+            boundingBoxHistory.add(newBoundingBox);
+
+            // Fix bounding box based on averaged history
+            this.boundingBox = calculateSmoothedBoundingBox();
         }
 
-        Rect getBoundingBox() {
-            return boundingBox;
-        }
-
-        String getValue() {
-            return value;
-        }
-
-        boolean isCloseTo(StabilizedBarcode other) {
-            return Math.abs(this.boundingBox.left - other.boundingBox.left) < 20 && // Reduced threshold for distant tracking
-                    Math.abs(this.boundingBox.top - other.boundingBox.top) < 20 &&
-                    Math.abs(this.boundingBox.right - other.boundingBox.right) < 20 &&
-                    Math.abs(this.boundingBox.bottom - other.boundingBox.bottom) < 20;
+        private Rect calculateSmoothedBoundingBox() {
+            int sumLeft = 0, sumTop = 0, sumRight = 0, sumBottom = 0;
+            for (Rect rect : boundingBoxHistory) {
+                sumLeft += rect.left;
+                sumTop += rect.top;
+                sumRight += rect.right;
+                sumBottom += rect.bottom;
+            }
+            int count = boundingBoxHistory.size();
+            return new Rect(sumLeft / count, sumTop / count, sumRight / count, sumBottom / count);
         }
 
         public void setIconBounds(float centerX, float centerY, float size) {
@@ -308,6 +315,21 @@ public class MainActivity extends AppCompatActivity {
 
         public RectF getIconBounds() {
             return iconBounds;
+        }
+
+        public Rect getBoundingBox() {
+            return boundingBox;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public boolean isCloseTo(StabilizedBarcode other) {
+            return Math.abs(this.boundingBox.left - other.boundingBox.left) < 30 &&
+                    Math.abs(this.boundingBox.top - other.boundingBox.top) < 30 &&
+                    Math.abs(this.boundingBox.right - other.boundingBox.right) < 30 &&
+                    Math.abs(this.boundingBox.bottom - other.boundingBox.bottom) < 30;
         }
     }
 
@@ -325,18 +347,15 @@ public class MainActivity extends AppCompatActivity {
                     {0, 0, 1, 0},
                     {0, 0, 0, 1}
             };
-            // Adjusting process and measurement noise for better stability
-            processNoise = 1e-6f;  // Reduced process noise for distant and smoother tracking
-            measurementNoise = 1e-4f; // Reduced measurement noise for distant barcodes
+            processNoise = 1e-7f;  // Reduced process noise for smoother tracking
+            measurementNoise = 1e-5f; // Reduced measurement noise for more stability
         }
 
         public Rect predictAndUpdate(Rect measurement) {
-            // Prediction step
             for (int i = 0; i < state.length; i++) {
                 errorCovariance[i][i] += processNoise;
             }
 
-            // Update step
             float[] measurementVec = new float[]{measurement.left, measurement.top, measurement.right, measurement.bottom};
             float[] kalmanGain = new float[state.length];  // Calculate Kalman gain for each state
             for (int i = 0; i < state.length; i++) {
