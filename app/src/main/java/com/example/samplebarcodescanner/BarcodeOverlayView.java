@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 import android.util.Log;
@@ -18,6 +19,8 @@ public class BarcodeOverlayView extends View {
     private final Paint boundingRectPaint;
     private final Paint contentRectPaint;
     private final Paint contentTextPaint;
+    private final Paint iconPaint;
+    private final Paint borderPaint; // Paint for the rounded border
     private final int contentPadding = 25;
     private int previewWidth;
     private int previewHeight;
@@ -39,6 +42,15 @@ public class BarcodeOverlayView extends View {
         contentTextPaint.setColor(Color.WHITE);
         contentTextPaint.setAlpha(255);
         contentTextPaint.setTextSize(36F);
+
+        iconPaint = new Paint();
+        iconPaint.setStyle(Paint.Style.FILL);
+        iconPaint.setAntiAlias(true); // Smooth edges for the icon
+
+        borderPaint = new Paint();
+        borderPaint.setStyle(Paint.Style.STROKE);
+        borderPaint.setAntiAlias(true); // Smooth edges for rounded border
+        borderPaint.setStrokeWidth(4F); // Thickness of the border
     }
 
     public void setBarcodes(List<MainActivity.StabilizedBarcode> barcodes, Map<String, Integer> barcodeColors, int previewWidth, int previewHeight) {
@@ -55,8 +67,6 @@ public class BarcodeOverlayView extends View {
 
         super.onDraw(canvas);
 
-        //long beforeDrawingTime = System.nanoTime();
-
         if (barcodes != null && previewWidth > 0 && previewHeight > 0) {
             float scaleX = getWidth() / (float) previewWidth;
             float scaleY = getHeight() / (float) previewHeight;
@@ -71,6 +81,8 @@ public class BarcodeOverlayView extends View {
                 // Set color for each barcode using consistent color mapping
                 int color = barcodeColors.getOrDefault(barcode.getValue(), Color.GREEN);
                 boundingRectPaint.setColor(color);
+                iconPaint.setColor(color);
+                borderPaint.setColor(color); // Border color matches the bounding box color
 
                 // Draw the bounding box on the canvas
                 canvas.drawRect(left, top, right, bottom, boundingRectPaint);
@@ -94,6 +106,13 @@ public class BarcodeOverlayView extends View {
                         bottom + contentPadding * 2 + contentTextPaint.getTextSize(),
                         contentTextPaint
                 );
+
+                // Calculate the center of the bounding box
+                float centerX = left + (right - left) / 2;
+                float centerY = top + (bottom - top) / 2;
+
+                // Draw the plus icon at the center of the bounding box with a rounded border and gap
+                drawPlusIconWithBorder(canvas, centerX, centerY, color);
             }
         } else {
             Log.d("BarcodeOverlayView", "No barcodes to draw");
@@ -101,10 +120,43 @@ public class BarcodeOverlayView extends View {
 
         long endTime = System.nanoTime();
 
-        // long beforeDrawingDuration = (beforeDrawingTime - startTime) / 1000;
-        // Log.d("BarcodeOverlayView", "Time before onDraw drawing: " + beforeDrawingDuration + " μs");
-
         long totalDuration = (endTime - startTime) / 1000;
         Log.d("BarcodeOverlayView", "Total onDraw execution time: " + totalDuration + " μs");
+    }
+
+    private void drawPlusIconWithBorder(Canvas canvas, float centerX, float centerY, int color) {
+        float iconSize = 30;
+        float barThickness = 5;
+        float borderRadius = 50;
+        float borderSize = iconSize + 15;
+
+        // Outer rounded border
+        RectF borderRect = new RectF(
+                centerX - borderSize / 2,
+                centerY - borderSize / 2,
+                centerX + borderSize / 2,
+                centerY + borderSize / 2
+        );
+        canvas.drawRoundRect(borderRect, borderRadius, borderRadius, borderPaint);
+
+        iconPaint.setColor(color);
+
+        // Draw vertical bar of the plus icon
+        canvas.drawRect(
+                centerX - barThickness / 2,
+                centerY - iconSize / 2,
+                centerX + barThickness / 2,
+                centerY + iconSize / 2,
+                iconPaint
+        );
+
+        // Draw horizontal bar of the plus icon
+        canvas.drawRect(
+                centerX - iconSize / 2,
+                centerY - barThickness / 2,
+                centerX + iconSize / 2,
+                centerY + barThickness / 2,
+                iconPaint
+        );
     }
 }
