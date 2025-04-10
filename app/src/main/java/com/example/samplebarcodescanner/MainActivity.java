@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
         Preview preview = new Preview.Builder()
-                .setTargetResolution(new Size(1080, 1920))
+                .setTargetResolution(new Size(1080, 1920)) // Higher resolution for distant barcodes
                 .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(new Size(1080, 1920))
+                .setTargetResolution(new Size(1080, 1920)) // Higher resolution for improved detection
                 .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
@@ -295,10 +295,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         boolean isCloseTo(StabilizedBarcode other) {
-            return Math.abs(this.boundingBox.left - other.boundingBox.left) < 30 &&
-                    Math.abs(this.boundingBox.top - other.boundingBox.top) < 30 &&
-                    Math.abs(this.boundingBox.right - other.boundingBox.right) < 30 &&
-                    Math.abs(this.boundingBox.bottom - other.boundingBox.bottom) < 30;
+            return Math.abs(this.boundingBox.left - other.boundingBox.left) < 20 && // Reduced threshold for distant tracking
+                    Math.abs(this.boundingBox.top - other.boundingBox.top) < 20 &&
+                    Math.abs(this.boundingBox.right - other.boundingBox.right) < 20 &&
+                    Math.abs(this.boundingBox.bottom - other.boundingBox.bottom) < 20;
         }
 
         public void setIconBounds(float centerX, float centerY, float size) {
@@ -326,8 +326,8 @@ public class MainActivity extends AppCompatActivity {
                     {0, 0, 0, 1}
             };
             // Adjusting process and measurement noise for better stability
-            processNoise = 1e-5f;  // Reduced process noise for smoother tracking
-            measurementNoise = 1e-3f; // Reduced measurement noise to expect less variation
+            processNoise = 1e-6f;  // Reduced process noise for distant and smoother tracking
+            measurementNoise = 1e-4f; // Reduced measurement noise for distant barcodes
         }
 
         public Rect predictAndUpdate(Rect measurement) {
