@@ -7,8 +7,8 @@
 
     <ImageView
         android:id="@+id/barcodeImageView"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_gravity="center" />
 
     <TextView
@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:textSize="18sp"
         android:textColor="@android:color/black"
-        android:layout_marginTop="10dp" />
+        android:layout_marginTop="0dp" />
 
     <Button
         android:id="@+id/okButton"
@@ -25,13 +25,23 @@
         android:layout_height="wrap_content"
         android:text="OK"
         android:layout_gravity="center"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="10dp"
+        android:backgroundTint="#000000"
+        android:fontFamily="Arial"
+        android:textFontWeight="600"
+        android:textColor="#ffffff"
+        android:textSize="15sp"/>
 
-    <Button
-        android:id="@+id/cancelButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Cancel"
-        android:layout_gravity="center"
-        android:layout_marginTop="10dp" />
+<!--    <Button-->
+<!--        android:id="@+id/cancelButton"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="BACK"-->
+<!--        android:layout_gravity="center"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        android:backgroundTint="#000000"-->
+<!--        android:fontFamily="Arial"-->
+<!--        android:textFontWeight="600"-->
+<!--        android:textColor="#ffffff"-->
+<!--        android:textSize="15sp"/>-->
 </LinearLayout>

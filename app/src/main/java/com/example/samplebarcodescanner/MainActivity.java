@@ -189,7 +189,6 @@ public class MainActivity extends AppCompatActivity {
 
     private Bitmap imageProxyToBitmap(ImageProxy imageProxy) {
         // Convert ImageProxy to Bitmap
-        ImageProxy.PlaneProxy plane = imageProxy.getPlanes()[0];
         Bitmap bitmap = Bitmap.createBitmap(imageProxy.getWidth(), imageProxy.getHeight(), Bitmap.Config.ARGB_8888);
         return bitmap;
     }
