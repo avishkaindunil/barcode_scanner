@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -194,8 +195,8 @@ public class BarcodeOverlayView extends View {
     private void showBarcodeMenu(MainActivity.StabilizedBarcode barcode) {
         // Create a popup window for the menu
         PopupWindow popupWindow = new PopupWindow(context);
-        popupWindow.setWidth(900);
-        popupWindow.setHeight(1200);
+        popupWindow.setWidth(700);
+        popupWindow.setHeight(390);
         popupWindow.setFocusable(true);
 
         // Inflate the custom layout for the menu
@@ -207,7 +208,16 @@ public class BarcodeOverlayView extends View {
 
         // Display the barcode image and details
         barcodeImageView.setImageBitmap(currentFrameBitmap);
-        barcodeDetailsTextView.setText("Barcode Value: " + barcode.getValue());
+        barcodeDetailsTextView.setText("Barcode Value: " + (barcode.getValue() != null ? barcode.getValue() : "No value found"));
+
+        // Create a rounded background with border radius and border color
+        GradientDrawable backgroundDrawable = new GradientDrawable();
+        backgroundDrawable.setShape(GradientDrawable.RECTANGLE);
+        backgroundDrawable.setColor(Color.WHITE); // Background color
+        backgroundDrawable.setCornerRadius(25); // Corner radius
+        backgroundDrawable.setStroke(4, Color.WHITE); // Border color and width
+
+        menuView.setBackground(backgroundDrawable); // Apply the drawable as the background
 
         popupWindow.setContentView(menuView);
 
