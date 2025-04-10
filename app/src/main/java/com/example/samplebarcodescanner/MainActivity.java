@@ -2,22 +2,23 @@ package com.example.samplebarcodescanner;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.ImageFormat;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.view.MenuItem;
-import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-import android.graphics.Color;
-import android.graphics.ImageFormat;
+
 import android.graphics.Rect;
 import android.graphics.RectF;
-import androidx.annotation.OptIn;
+import android.graphics.Color;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ExperimentalGetImage;
@@ -63,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
     private Map<String, List<StabilizedBarcode>> trackedBarcodes = new HashMap<>();
     private Map<String, Integer> barcodeColors = new HashMap<>();
     private Random random = new Random();
+
+    private Bitmap currentFrameBitmap; // Temporary storage for the current frame bitmap
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -169,13 +172,26 @@ public class MainActivity extends AppCompatActivity {
             InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
 
             barcodeScanner.process(inputImage)
-                    .addOnSuccessListener(this::processBarcodes)
+                    .addOnSuccessListener(barcodes -> {
+                        processBarcodes(barcodes);
+
+                        // Save the current frame bitmap
+                        currentFrameBitmap = imageProxyToBitmap(image);
+                        barcodeOverlayView.setCurrentFrameBitmap(currentFrameBitmap);
+                    })
                     .addOnFailureListener(e -> Log.e(TAG, "Barcode scanning failed", e))
                     .addOnCompleteListener(task -> image.close());
         } catch (Exception e) {
             Log.e(TAG, "Error processing image", e);
             image.close();
         }
+    }
+
+    private Bitmap imageProxyToBitmap(ImageProxy imageProxy) {
+        // Convert ImageProxy to Bitmap
+        ImageProxy.PlaneProxy plane = imageProxy.getPlanes()[0];
+        Bitmap bitmap = Bitmap.createBitmap(imageProxy.getWidth(), imageProxy.getHeight(), Bitmap.Config.ARGB_8888);
+        return bitmap;
     }
 
     private void processBarcodes(List<Barcode> barcodes) {

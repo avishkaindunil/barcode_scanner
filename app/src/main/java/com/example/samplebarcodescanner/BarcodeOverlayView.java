@@ -1,18 +1,17 @@
 package com.example.samplebarcodescanner;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RoundRectShape;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
@@ -31,6 +30,7 @@ public class BarcodeOverlayView extends View {
     private int previewWidth;
     private int previewHeight;
     private Context context; // Reference for context to show the menu
+    private Bitmap currentFrameBitmap; // Temporary storage for the barcode image
 
     public BarcodeOverlayView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -67,6 +67,10 @@ public class BarcodeOverlayView extends View {
         this.previewWidth = previewWidth;
         this.previewHeight = previewHeight;
         invalidate(); // Request a redraw
+    }
+
+    public void setCurrentFrameBitmap(Bitmap bitmap) {
+        this.currentFrameBitmap = bitmap; // Store the current frame's bitmap
     }
 
     @Override
@@ -179,7 +183,7 @@ public class BarcodeOverlayView extends View {
             for (MainActivity.StabilizedBarcode barcode : barcodes) {
                 RectF iconBounds = barcode.getIconBounds();
                 if (iconBounds != null && iconBounds.contains(touchX, touchY)) {
-                    showMenuAtCenter();
+                    showBarcodeMenu(barcode);
                     return true;
                 }
             }
@@ -187,36 +191,27 @@ public class BarcodeOverlayView extends View {
         return super.onTouchEvent(event);
     }
 
-    private void showMenuAtCenter() {
+    private void showBarcodeMenu(MainActivity.StabilizedBarcode barcode) {
         // Create a popup window for the menu
         PopupWindow popupWindow = new PopupWindow(context);
         popupWindow.setWidth(900);
         popupWindow.setHeight(1200);
         popupWindow.setFocusable(true);
 
-        // Create a rounded background for the menu
-        float[] radii = new float[]{20, 20, 20, 20, 20, 20, 20, 20};
-        ShapeDrawable roundedBackground = new ShapeDrawable(new RoundRectShape(radii, null, null));
-        roundedBackground.getPaint().setColor(Color.WHITE);
-        roundedBackground.getPaint().setStyle(Paint.Style.FILL);
+        // Inflate the custom layout for the menu
+        View menuView = View.inflate(context, R.layout.barcode_menu, null);
 
-        popupWindow.setBackgroundDrawable(roundedBackground);
+        // Set up the image view and text view in the menu
+        ImageView barcodeImageView = menuView.findViewById(R.id.barcodeImageView);
+        TextView barcodeDetailsTextView = menuView.findViewById(R.id.barcodeDetailsTextView);
 
-        // Create a simple TextView for the menu content
-        TextView menuContent = new TextView(context);
-        menuContent.setText("Menu Content Here");
-        menuContent.setTextSize(24);
-        menuContent.setPadding(20, 20, 20, 20);
+        // Display the barcode image and details
+        barcodeImageView.setImageBitmap(currentFrameBitmap);
+        barcodeDetailsTextView.setText("Barcode Value: " + barcode.getValue());
 
-        popupWindow.setContentView(menuContent);
-
-        // Calculate the center of the screen
-        int screenWidth = getWidth();
-        int screenHeight = getHeight();
-        int menuX = (screenWidth - popupWindow.getWidth()) / 2;
-        int menuY = (screenHeight - popupWindow.getHeight()) / 2;
+        popupWindow.setContentView(menuView);
 
         // Show the menu at the center of the screen
-        popupWindow.showAtLocation(this, 0, menuX, menuY);
+        popupWindow.showAtLocation(this, 0, getWidth() / 2, getHeight() / 2);
     }
 }
