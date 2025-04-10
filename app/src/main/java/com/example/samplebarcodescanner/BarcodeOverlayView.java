@@ -6,6 +6,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RoundRectShape;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -138,7 +141,6 @@ public class BarcodeOverlayView extends View {
         float borderRadius = 50;
         float borderSize = iconSize + 15;
 
-        // Outer rounded border
         RectF borderRect = new RectF(
                 centerX - borderSize / 2,
                 centerY - borderSize / 2,
@@ -151,10 +153,10 @@ public class BarcodeOverlayView extends View {
 
         // Draw vertical bar of the plus icon
         canvas.drawRect(
-                centerX - barThickness / 2, // Left
-                centerY - iconSize / 2,     // Top
-                centerX + barThickness / 2, // Right
-                centerY + iconSize / 2,     // Bottom
+                centerX - barThickness / 2,
+                centerY - iconSize / 2,
+                centerX + barThickness / 2,
+                centerY + iconSize / 2,
                 iconPaint
         );
 
@@ -177,7 +179,7 @@ public class BarcodeOverlayView extends View {
             for (MainActivity.StabilizedBarcode barcode : barcodes) {
                 RectF iconBounds = barcode.getIconBounds();
                 if (iconBounds != null && iconBounds.contains(touchX, touchY)) {
-                    showMenuAtCenter(); // Show menu at the center of the screen
+                    showMenuAtCenter();
                     return true;
                 }
             }
@@ -188,15 +190,22 @@ public class BarcodeOverlayView extends View {
     private void showMenuAtCenter() {
         // Create a popup window for the menu
         PopupWindow popupWindow = new PopupWindow(context);
-        popupWindow.setWidth(810);
-        popupWindow.setHeight(900);
+        popupWindow.setWidth(900);
+        popupWindow.setHeight(1200);
         popupWindow.setFocusable(true);
+
+        // Create a rounded background for the menu
+        float[] radii = new float[]{20, 20, 20, 20, 20, 20, 20, 20};
+        ShapeDrawable roundedBackground = new ShapeDrawable(new RoundRectShape(radii, null, null));
+        roundedBackground.getPaint().setColor(Color.WHITE);
+        roundedBackground.getPaint().setStyle(Paint.Style.FILL);
+
+        popupWindow.setBackgroundDrawable(roundedBackground);
 
         // Create a simple TextView for the menu content
         TextView menuContent = new TextView(context);
         menuContent.setText("Menu Content Here");
         menuContent.setTextSize(24);
-        menuContent.setBackgroundColor(Color.WHITE);
         menuContent.setPadding(20, 20, 20, 20);
 
         popupWindow.setContentView(menuContent);
