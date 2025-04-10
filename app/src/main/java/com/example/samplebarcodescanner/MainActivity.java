@@ -14,6 +14,7 @@ import android.widget.Toast;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import androidx.annotation.OptIn;
 
 import androidx.annotation.NonNull;
@@ -273,6 +274,7 @@ public class MainActivity extends AppCompatActivity {
         private final String value;
         private KalmanFilter kalmanFilter;
         private Rect boundingBox;
+        private RectF iconBounds; // Icon bounds for click detection
 
         StabilizedBarcode(String value, Rect boundingBox) {
             this.value = value;
@@ -297,6 +299,15 @@ public class MainActivity extends AppCompatActivity {
                     Math.abs(this.boundingBox.top - other.boundingBox.top) < 30 &&
                     Math.abs(this.boundingBox.right - other.boundingBox.right) < 30 &&
                     Math.abs(this.boundingBox.bottom - other.boundingBox.bottom) < 30;
+        }
+
+        public void setIconBounds(float centerX, float centerY, float size) {
+            float halfSize = size / 2;
+            this.iconBounds = new RectF(centerX - halfSize, centerY - halfSize, centerX + halfSize, centerY + halfSize);
+        }
+
+        public RectF getIconBounds() {
+            return iconBounds;
         }
     }
 

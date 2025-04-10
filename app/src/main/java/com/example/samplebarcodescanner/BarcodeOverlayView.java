@@ -7,8 +7,11 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.view.View;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 
 import java.util.List;
 import java.util.Map;
@@ -24,9 +27,11 @@ public class BarcodeOverlayView extends View {
     private final int contentPadding = 25;
     private int previewWidth;
     private int previewHeight;
+    private Context context; // Reference for context to show the menu
 
     public BarcodeOverlayView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        this.context = context;
 
         boundingRectPaint = new Paint();
         boundingRectPaint.setStyle(Paint.Style.STROKE);
@@ -113,6 +118,9 @@ public class BarcodeOverlayView extends View {
 
                 // Draw the plus icon at the center of the bounding box with a rounded border and gap
                 drawPlusIconWithBorder(canvas, centerX, centerY, color);
+
+                // Save the clickable region for the plus icon
+                barcode.setIconBounds(centerX, centerY, 50); // Save icon bounds for touch detection
             }
         } else {
             Log.d("BarcodeOverlayView", "No barcodes to draw");
@@ -143,10 +151,10 @@ public class BarcodeOverlayView extends View {
 
         // Draw vertical bar of the plus icon
         canvas.drawRect(
-                centerX - barThickness / 2,
-                centerY - iconSize / 2,
-                centerX + barThickness / 2,
-                centerY + iconSize / 2,
+                centerX - barThickness / 2, // Left
+                centerY - iconSize / 2,     // Top
+                centerX + barThickness / 2, // Right
+                centerY + iconSize / 2,     // Bottom
                 iconPaint
         );
 
@@ -158,5 +166,48 @@ public class BarcodeOverlayView extends View {
                 centerY + barThickness / 2,
                 iconPaint
         );
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            float touchX = event.getX();
+            float touchY = event.getY();
+
+            for (MainActivity.StabilizedBarcode barcode : barcodes) {
+                RectF iconBounds = barcode.getIconBounds();
+                if (iconBounds != null && iconBounds.contains(touchX, touchY)) {
+                    showMenuAtCenter(); // Show menu at the center of the screen
+                    return true;
+                }
+            }
+        }
+        return super.onTouchEvent(event);
+    }
+
+    private void showMenuAtCenter() {
+        // Create a popup window for the menu
+        PopupWindow popupWindow = new PopupWindow(context);
+        popupWindow.setWidth(810);
+        popupWindow.setHeight(900);
+        popupWindow.setFocusable(true);
+
+        // Create a simple TextView for the menu content
+        TextView menuContent = new TextView(context);
+        menuContent.setText("Menu Content Here");
+        menuContent.setTextSize(24);
+        menuContent.setBackgroundColor(Color.WHITE);
+        menuContent.setPadding(20, 20, 20, 20);
+
+        popupWindow.setContentView(menuContent);
+
+        // Calculate the center of the screen
+        int screenWidth = getWidth();
+        int screenHeight = getHeight();
+        int menuX = (screenWidth - popupWindow.getWidth()) / 2;
+        int menuY = (screenHeight - popupWindow.getHeight()) / 2;
+
+        // Show the menu at the center of the screen
+        popupWindow.showAtLocation(this, 0, menuX, menuY);
     }
 }
