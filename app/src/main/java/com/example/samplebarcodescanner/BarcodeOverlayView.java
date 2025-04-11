@@ -135,7 +135,9 @@ public class BarcodeOverlayView extends View {
                 // Update popup position if it exists
                 if (activePopups.containsKey(barcode.getValue())) {
                     PopupWindow popupWindow = activePopups.get(barcode.getValue());
-                    popupWindow.update((int) left, (int) bottom, -1, -1);
+                    int popupX = (int) (boundingBox.left * scaleX);
+                    int popupY = (int) (boundingBox.bottom * scaleY);
+                    popupWindow.update(popupX, popupY, -1, -1);
                 }
             }
         } else {
