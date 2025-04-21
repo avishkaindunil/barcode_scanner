@@ -65,8 +65,6 @@ public class MainActivity extends AppCompatActivity {
     private Map<String, Integer> barcodeColors = new HashMap<>();
     private Random random = new Random();
 
-    private Bitmap currentFrameBitmap; // Temporary storage for the current frame bitmap
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -133,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
         Preview preview = new Preview.Builder()
-                .setTargetResolution(new Size(1080, 1920)) // Resolution for barcode detection
+                .setTargetResolution(new Size(1080, 1920))
                 .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
@@ -141,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         imageCapture = new ImageCapture.Builder()
-                .setTargetResolution(new Size(1080, 1920)) // Resolution for barcode detection
+                .setTargetResolution(new Size(1080, 1920))
                 .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
@@ -174,10 +172,6 @@ public class MainActivity extends AppCompatActivity {
             barcodeScanner.process(inputImage)
                     .addOnSuccessListener(barcodes -> {
                         processBarcodes(barcodes);
-
-                        // Save the current frame bitmap
-                        currentFrameBitmap = imageProxyToBitmap(image);
-                        barcodeOverlayView.setCurrentFrameBitmap(currentFrameBitmap);
                     })
                     .addOnFailureListener(e -> Log.e(TAG, "Barcode scanning failed", e))
                     .addOnCompleteListener(task -> image.close());
@@ -185,12 +179,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "Error processing image", e);
             image.close();
         }
-    }
-
-    private Bitmap imageProxyToBitmap(ImageProxy imageProxy) {
-        // Convert ImageProxy to Bitmap
-        Bitmap bitmap = Bitmap.createBitmap(imageProxy.getWidth(), imageProxy.getHeight(), Bitmap.Config.ARGB_8888);
-        return bitmap;
     }
 
     private void processBarcodes(List<Barcode> barcodes) {

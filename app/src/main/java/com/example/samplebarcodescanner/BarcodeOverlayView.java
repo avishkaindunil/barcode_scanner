@@ -2,6 +2,7 @@ package com.example.samplebarcodescanner;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -27,13 +28,13 @@ public class BarcodeOverlayView extends View {
     private final Paint contentRectPaint;
     private final Paint contentTextPaint;
     private final Paint iconPaint;
-    private final Paint borderPaint; // Paint for the rounded border
+    private final Paint borderPaint;
     private final int contentPadding = 25;
     private int previewWidth;
     private int previewHeight;
-    private Context context; // Reference for context to show the menu
-    private Bitmap currentFrameBitmap; // Temporary storage for the barcode image
-    private Map<String, PopupWindow> activePopups = new HashMap<>(); // Track active popups for each barcode
+    private Context context;
+    private Bitmap appleBitmap; // Bitmap for apple.jpg
+    private Map<String, PopupWindow> activePopups = new HashMap<>();
 
     public BarcodeOverlayView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -56,12 +57,15 @@ public class BarcodeOverlayView extends View {
 
         iconPaint = new Paint();
         iconPaint.setStyle(Paint.Style.FILL);
-        iconPaint.setAntiAlias(true); // Smooth edges for the icon
+        iconPaint.setAntiAlias(true);
 
         borderPaint = new Paint();
         borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setAntiAlias(true); // Smooth edges for rounded border
-        borderPaint.setStrokeWidth(4F); // Thickness of the border
+        borderPaint.setAntiAlias(true);
+        borderPaint.setStrokeWidth(4F);
+
+        // Load apple.jpg from resources
+        appleBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.apple);
     }
 
     public void setBarcodes(List<MainActivity.StabilizedBarcode> barcodes, Map<String, Integer> barcodeColors, int previewWidth, int previewHeight) {
@@ -69,17 +73,11 @@ public class BarcodeOverlayView extends View {
         this.barcodeColors = barcodeColors;
         this.previewWidth = previewWidth;
         this.previewHeight = previewHeight;
-        invalidate(); // Request a redraw
-    }
-
-    public void setCurrentFrameBitmap(Bitmap bitmap) {
-        this.currentFrameBitmap = bitmap; // Store the current frame's bitmap
+        invalidate();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        long startTime = System.nanoTime();
-
         super.onDraw(canvas);
 
         if (barcodes != null && previewWidth > 0 && previewHeight > 0) {
@@ -93,20 +91,16 @@ public class BarcodeOverlayView extends View {
                 float right = boundingBox.right * scaleX;
                 float bottom = boundingBox.bottom * scaleY;
 
-                // Set color for each barcode using consistent color mapping
                 int color = barcodeColors.getOrDefault(barcode.getValue(), Color.GREEN);
                 boundingRectPaint.setColor(color);
                 iconPaint.setColor(color);
-                borderPaint.setColor(color); // Border color matches the bounding box color
+                borderPaint.setColor(color);
 
-                // Draw the bounding box on the canvas
                 canvas.drawRect(left, top, right, bottom, boundingRectPaint);
 
-                // Draw barcode content text below bounding box
                 String barcodeContent = barcode.getValue();
                 float textWidth = contentTextPaint.measureText(barcodeContent);
 
-                // Draw a filled rectangle below the bounding box to display barcode content
                 canvas.drawRect(
                         left,
                         bottom + contentPadding / 2,
@@ -122,17 +116,13 @@ public class BarcodeOverlayView extends View {
                         contentTextPaint
                 );
 
-                // Calculate the center of the bounding box
                 float centerX = left + (right - left) / 2;
                 float centerY = top + (bottom - top) / 2;
 
-                // Draw the plus icon at the center of the bounding box with a rounded border and gap
                 drawPlusIconWithBorder(canvas, centerX, centerY, color);
 
-                // Save the clickable region for the plus icon
-                barcode.setIconBounds(centerX, centerY, 50); // Save icon bounds for touch detection
+                barcode.setIconBounds(centerX, centerY, 50);
 
-                // Update popup position if it exists
                 if (activePopups.containsKey(barcode.getValue())) {
                     PopupWindow popupWindow = activePopups.get(barcode.getValue());
                     int popupX = (int) (boundingBox.left * scaleX);
@@ -143,11 +133,6 @@ public class BarcodeOverlayView extends View {
         } else {
             Log.d("BarcodeOverlayView", "No barcodes to draw");
         }
-
-        long endTime = System.nanoTime();
-
-        long totalDuration = (endTime - startTime) / 1000;
-        Log.d("BarcodeOverlayView", "Total onDraw execution time: " + totalDuration + " μs");
     }
 
     private void drawPlusIconWithBorder(Canvas canvas, float centerX, float centerY, int color) {
@@ -166,7 +151,6 @@ public class BarcodeOverlayView extends View {
 
         iconPaint.setColor(color);
 
-        // Draw vertical bar of the plus icon
         canvas.drawRect(
                 centerX - barThickness / 2,
                 centerY - iconSize / 2,
@@ -175,7 +159,6 @@ public class BarcodeOverlayView extends View {
                 iconPaint
         );
 
-        // Draw horizontal bar of the plus icon
         canvas.drawRect(
                 centerX - iconSize / 2,
                 centerY - barThickness / 2,
@@ -203,40 +186,34 @@ public class BarcodeOverlayView extends View {
     }
 
     private void showBarcodeMenu(MainActivity.StabilizedBarcode barcode) {
-        // Check if the popup already exists
         if (activePopups.containsKey(barcode.getValue())) {
-            return; // Do not create a new popup
+            return;
         }
 
-        // Create a popup window for the menu
         PopupWindow popupWindow = new PopupWindow(context);
-        popupWindow.setWidth(700);
-        popupWindow.setHeight(390);
+        popupWindow.setWidth(840);
+        popupWindow.setHeight(570);
         popupWindow.setFocusable(true);
 
-        // Inflate the custom layout for the menu
         View menuView = View.inflate(context, R.layout.barcode_menu, null);
 
-        // Set up the image view and text view in the menu
         ImageView barcodeImageView = menuView.findViewById(R.id.barcodeImageView);
         TextView barcodeDetailsTextView = menuView.findViewById(R.id.barcodeDetailsTextView);
 
-        // Display the barcode image and details
-        barcodeImageView.setImageBitmap(currentFrameBitmap);
+        // Set apple image (make sure the image is correctly placed in drawable resources)
+        barcodeImageView.setImageBitmap(Bitmap.createScaledBitmap(appleBitmap, 94, 126, false));
         barcodeDetailsTextView.setText("Barcode Value: " + (barcode.getValue() != null ? barcode.getValue() : "No value found"));
 
-        // Create a rounded background with border radius and border color
         GradientDrawable backgroundDrawable = new GradientDrawable();
         backgroundDrawable.setShape(GradientDrawable.RECTANGLE);
-        backgroundDrawable.setColor(Color.WHITE); // Background color
-        backgroundDrawable.setCornerRadius(25); // Corner radius
-        backgroundDrawable.setStroke(4, Color.WHITE); // Border color and width
+        backgroundDrawable.setColor(Color.WHITE);
+        backgroundDrawable.setCornerRadius(25);
+        backgroundDrawable.setStroke(4, Color.WHITE);
 
-        menuView.setBackground(backgroundDrawable); // Apply the drawable as the background
+        menuView.setBackground(backgroundDrawable);
 
         popupWindow.setContentView(menuView);
 
-        // Show the menu at the bounding box position
         Rect boundingBox = barcode.getBoundingBox();
         float scaleX = getWidth() / (float) previewWidth;
         float scaleY = getHeight() / (float) previewHeight;
@@ -245,6 +222,6 @@ public class BarcodeOverlayView extends View {
         int popupY = (int) (boundingBox.bottom * scaleY);
         popupWindow.showAtLocation(this, 0, popupX, popupY);
 
-        activePopups.put(barcode.getValue(), popupWindow); // Track the active popup
+        activePopups.put(barcode.getValue(), popupWindow);
     }
 }
