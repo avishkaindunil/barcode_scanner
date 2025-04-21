@@ -26,7 +26,6 @@
         android:layout_gravity="center"
         android:scaleType="centerCrop"/>
 
-    <!-- Container for buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -53,29 +52,5 @@
             android:fontFamily="Arial"
             android:textColor="#ffffff"/>
     </LinearLayout>
-<!--    <Button-->
-<!--        android:id="@+id/okButton"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="OK"-->
-<!--        android:layout_gravity="center"-->
-<!--        android:layout_marginTop="10dp"-->
-<!--        android:backgroundTint="#000000"-->
-<!--        android:fontFamily="Arial"-->
-<!--        android:textFontWeight="600"-->
-<!--        android:textColor="#ffffff"-->
-<!--        android:textSize="15sp"/>-->
 
-<!--    <Button-->
-<!--        android:id="@+id/cancelButton"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="BACK"-->
-<!--        android:layout_gravity="center"-->
-<!--        android:layout_marginTop="10dp"-->
-<!--        android:backgroundTint="#000000"-->
-<!--        android:fontFamily="Arial"-->
-<!--        android:textFontWeight="600"-->
-<!--        android:textColor="#ffffff"-->
-<!--        android:textSize="15sp"/>-->
 </LinearLayout>
