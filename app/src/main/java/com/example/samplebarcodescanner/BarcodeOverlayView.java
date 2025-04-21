@@ -201,8 +201,8 @@ public class BarcodeOverlayView extends View {
         }
 
         PopupWindow popupWindow = new PopupWindow(context);
-        popupWindow.setWidth(840);
-        popupWindow.setHeight(800);
+        popupWindow.setWidth(770);
+        popupWindow.setHeight(700);
         popupWindow.setFocusable(true);
 
         View menuView = View.inflate(context, R.layout.barcode_menu, null);
@@ -213,7 +213,7 @@ public class BarcodeOverlayView extends View {
         Button okButton = menuView.findViewById(R.id.okButton);
 
         // Set apple image (make sure the image is correctly placed in drawable resources)
-        barcodeImageView.setImageBitmap(Bitmap.createScaledBitmap(appleBitmap, 94, 126, false));
+        barcodeImageView.setImageBitmap(Bitmap.createScaledBitmap(appleBitmap, 100, 126, false));
         barcodeDetailsTextView.setText("Barcode Value: " + (barcode.getValue() != null ? barcode.getValue() : "No value found"));
 
         cancelButton.setOnClickListener(v -> {
@@ -227,8 +227,8 @@ public class BarcodeOverlayView extends View {
         GradientDrawable backgroundDrawable = new GradientDrawable();
         backgroundDrawable.setShape(GradientDrawable.RECTANGLE);
         backgroundDrawable.setColor(Color.WHITE);
-        backgroundDrawable.setCornerRadius(25);
-        backgroundDrawable.setStroke(4, Color.WHITE);
+        backgroundDrawable.setCornerRadius(0);
+        backgroundDrawable.setStroke(0, Color.WHITE);
 
         menuView.setBackground(backgroundDrawable);
 
