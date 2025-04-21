@@ -78,6 +78,8 @@ public class BarcodeOverlayView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        long startTime = System.nanoTime();
+
         super.onDraw(canvas);
 
         if (barcodes != null && previewWidth > 0 && previewHeight > 0) {
@@ -133,6 +135,11 @@ public class BarcodeOverlayView extends View {
         } else {
             Log.d("BarcodeOverlayView", "No barcodes to draw");
         }
+
+        long endTime = System.nanoTime();
+
+        long totalDuration = (endTime - startTime) / 1000;
+        Log.d("BarcodeOverlayView", "Total onDraw execution time: " + totalDuration + " μs");
     }
 
     private void drawPlusIconWithBorder(Canvas canvas, float centerX, float centerY, int color) {
