@@ -21,7 +21,7 @@
 
     <ImageView
         android:id="@+id/barcodeImageView"
-        android:layout_width="95dp"
+        android:layout_width="100dp"
         android:layout_height="126dp"
         android:layout_gravity="center"
         android:scaleType="centerCrop"/>
@@ -36,8 +36,9 @@
         <Button
             android:id="@+id/cancelButton"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:text="CANCEL"
+            android:textSize="14sp"
+            android:layout_height="46dp"
             android:backgroundTint="#000000"
             android:fontFamily="Arial"
             android:textColor="#ffffff"
@@ -46,8 +47,9 @@
         <Button
             android:id="@+id/okButton"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:text="OK"
+            android:textSize="14sp"
+            android:layout_height="46dp"
             android:backgroundTint="#000000"
             android:fontFamily="Arial"
             android:textColor="#ffffff"/>
