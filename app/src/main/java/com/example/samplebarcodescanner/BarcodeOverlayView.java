@@ -17,8 +17,6 @@ import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Button;
-import android.view.View.OnClickListener;
-
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +34,7 @@ public class BarcodeOverlayView extends View {
     private int previewWidth;
     private int previewHeight;
     private Context context;
-    private Bitmap appleBitmap; // Bitmap for apple.jpg
+    private Bitmap appleBitmap;
     private Map<String, PopupWindow> activePopups = new HashMap<>();
 
     public BarcodeOverlayView(Context context, AttributeSet attrs) {
@@ -67,7 +65,6 @@ public class BarcodeOverlayView extends View {
         borderPaint.setAntiAlias(true);
         borderPaint.setStrokeWidth(4F);
 
-        // Load apple.jpg from resources
         appleBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.apple);
     }
 
@@ -76,7 +73,7 @@ public class BarcodeOverlayView extends View {
         this.barcodeColors = barcodeColors;
         this.previewWidth = previewWidth;
         this.previewHeight = previewHeight;
-        invalidate();
+        invalidate();  // Force a redraw of the view
     }
 
     @Override
@@ -128,10 +125,12 @@ public class BarcodeOverlayView extends View {
 
                 barcode.setIconBounds(centerX, centerY, 50);
 
-                if (activePopups.containsKey(barcode.getValue())) {
-                    PopupWindow popupWindow = activePopups.get(barcode.getValue());
-                    int popupX = (int) (boundingBox.left * scaleX);
-                    int popupY = (int) (boundingBox.bottom * scaleY);
+                String uniqueId = barcode.getValue();
+                if (activePopups.containsKey(uniqueId)) {
+                    PopupWindow popupWindow = activePopups.get(uniqueId);
+                    // Update the popup position based on the bounding box
+                    int popupX = (int) left;
+                    int popupY = (int) bottom;
                     popupWindow.update(popupX, popupY, -1, -1);
                 }
             }
@@ -196,7 +195,8 @@ public class BarcodeOverlayView extends View {
     }
 
     private void showBarcodeMenu(MainActivity.StabilizedBarcode barcode) {
-        if (activePopups.containsKey(barcode.getValue())) {
+        String uniqueId = barcode.getValue();
+        if (activePopups.containsKey(uniqueId)) {
             return;
         }
 
@@ -212,16 +212,17 @@ public class BarcodeOverlayView extends View {
         Button cancelButton = menuView.findViewById(R.id.cancelButton);
         Button okButton = menuView.findViewById(R.id.okButton);
 
-        // Set apple image (make sure the image is correctly placed in drawable resources)
         barcodeImageView.setImageBitmap(Bitmap.createScaledBitmap(appleBitmap, 100, 126, false));
         barcodeDetailsTextView.setText("Barcode Value: " + (barcode.getValue() != null ? barcode.getValue() : "No value found"));
 
         cancelButton.setOnClickListener(v -> {
             popupWindow.dismiss();
+            activePopups.remove(uniqueId);
         });
 
         okButton.setOnClickListener(v -> {
             popupWindow.dismiss();
+            activePopups.remove(uniqueId);
         });
 
         GradientDrawable backgroundDrawable = new GradientDrawable();
@@ -242,6 +243,6 @@ public class BarcodeOverlayView extends View {
         int popupY = (int) (boundingBox.bottom * scaleY);
         popupWindow.showAtLocation(this, 0, popupX, popupY);
 
-        activePopups.put(barcode.getValue(), popupWindow);
+        activePopups.put(uniqueId, popupWindow);
     }
 }

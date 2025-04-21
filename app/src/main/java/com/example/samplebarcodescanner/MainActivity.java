@@ -2,7 +2,6 @@ package com.example.samplebarcodescanner;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -350,8 +349,8 @@ public class MainActivity extends AppCompatActivity {
                     {0, 0, 1, 0},
                     {0, 0, 0, 1}
             };
-            processNoise = 1e-7f;  // Reduced process noise for smoother tracking
-            measurementNoise = 1e-5f; // Reduced measurement noise for more stability
+            processNoise = 1e-7f;
+            measurementNoise = 1e-5f;
         }
 
         public Rect predictAndUpdate(Rect measurement) {
@@ -360,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             float[] measurementVec = new float[]{measurement.left, measurement.top, measurement.right, measurement.bottom};
-            float[] kalmanGain = new float[state.length];  // Calculate Kalman gain for each state
+            float[] kalmanGain = new float[state.length];
             for (int i = 0; i < state.length; i++) {
                 kalmanGain[i] = errorCovariance[i][i] / (errorCovariance[i][i] + measurementNoise);
             }
