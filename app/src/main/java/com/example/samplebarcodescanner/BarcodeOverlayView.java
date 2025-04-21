@@ -16,6 +16,9 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Button;
+import android.view.View.OnClickListener;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -199,17 +202,27 @@ public class BarcodeOverlayView extends View {
 
         PopupWindow popupWindow = new PopupWindow(context);
         popupWindow.setWidth(840);
-        popupWindow.setHeight(570);
+        popupWindow.setHeight(800);
         popupWindow.setFocusable(true);
 
         View menuView = View.inflate(context, R.layout.barcode_menu, null);
 
         ImageView barcodeImageView = menuView.findViewById(R.id.barcodeImageView);
         TextView barcodeDetailsTextView = menuView.findViewById(R.id.barcodeDetailsTextView);
+        Button cancelButton = menuView.findViewById(R.id.cancelButton);
+        Button okButton = menuView.findViewById(R.id.okButton);
 
         // Set apple image (make sure the image is correctly placed in drawable resources)
         barcodeImageView.setImageBitmap(Bitmap.createScaledBitmap(appleBitmap, 94, 126, false));
         barcodeDetailsTextView.setText("Barcode Value: " + (barcode.getValue() != null ? barcode.getValue() : "No value found"));
+
+        cancelButton.setOnClickListener(v -> {
+            popupWindow.dismiss();
+        });
+
+        okButton.setOnClickListener(v -> {
+            popupWindow.dismiss();
+        });
 
         GradientDrawable backgroundDrawable = new GradientDrawable();
         backgroundDrawable.setShape(GradientDrawable.RECTANGLE);
