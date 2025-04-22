@@ -2,7 +2,6 @@ package com.example.samplebarcodescanner;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.graphics.ImageFormat;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,13 +10,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
+import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.Color;
-
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ExperimentalGetImage;
@@ -38,8 +36,8 @@ import com.google.mlkit.vision.common.InputImage;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -169,9 +167,7 @@ public class MainActivity extends AppCompatActivity {
             InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
 
             barcodeScanner.process(inputImage)
-                    .addOnSuccessListener(barcodes -> {
-                        processBarcodes(barcodes);
-                    })
+                    .addOnSuccessListener(this::processBarcodes)
                     .addOnFailureListener(e -> Log.e(TAG, "Barcode scanning failed", e))
                     .addOnCompleteListener(task -> image.close());
         } catch (Exception e) {
@@ -274,18 +270,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static class StabilizedBarcode {
+        private static final int SMOOTHING_WINDOW_SIZE = 10; // Number of frames for stabilization
+
         private final String value;
         private KalmanFilter kalmanFilter;
         private Rect boundingBox;
         private RectF iconBounds;
-        private LinkedList<Rect> boundingBoxHistory = new LinkedList<>();
-        private static final int SMOOTHING_WINDOW_SIZE = 10; // Number of frames for stabilization
+        private final LinkedList<Rect> boundingBoxHistory = new LinkedList<>();
 
         StabilizedBarcode(String value, Rect boundingBox) {
             this.value = value;
             this.boundingBox = boundingBox;
             this.kalmanFilter = new KalmanFilter(boundingBox);
-            boundingBoxHistory.add(boundingBox);
+            setIconBounds((boundingBox.left + boundingBox.right) / 2, (boundingBox.top + boundingBox.bottom) / 2, 50);
         }
 
         void update(Rect newBoundingBox) {
@@ -293,41 +290,28 @@ public class MainActivity extends AppCompatActivity {
                 boundingBoxHistory.poll();
             }
             boundingBoxHistory.add(newBoundingBox);
-
-            // Fix bounding box based on averaged history
-            this.boundingBox = calculateSmoothedBoundingBox();
+            this.boundingBox = kalmanFilter.predictAndUpdate(newBoundingBox);
+            setIconBounds((boundingBox.left + boundingBox.right) / 2, (boundingBox.top + boundingBox.bottom) / 2, 50);
         }
 
-        private Rect calculateSmoothedBoundingBox() {
-            int sumLeft = 0, sumTop = 0, sumRight = 0, sumBottom = 0;
-            for (Rect rect : boundingBoxHistory) {
-                sumLeft += rect.left;
-                sumTop += rect.top;
-                sumRight += rect.right;
-                sumBottom += rect.bottom;
-            }
-            int count = boundingBoxHistory.size();
-            return new Rect(sumLeft / count, sumTop / count, sumRight / count, sumBottom / count);
+        Rect getBoundingBox() {
+            return boundingBox;
         }
 
-        public void setIconBounds(float centerX, float centerY, float size) {
+        String getValue() {
+            return value;
+        }
+
+        void setIconBounds(float centerX, float centerY, float size) {
             float halfSize = size / 2;
             this.iconBounds = new RectF(centerX - halfSize, centerY - halfSize, centerX + halfSize, centerY + halfSize);
         }
 
-        public RectF getIconBounds() {
+        RectF getIconBounds() {
             return iconBounds;
         }
 
-        public Rect getBoundingBox() {
-            return boundingBox;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public boolean isCloseTo(StabilizedBarcode other) {
+        boolean isCloseTo(StabilizedBarcode other) {
             return Math.abs(this.boundingBox.left - other.boundingBox.left) < 30 &&
                     Math.abs(this.boundingBox.top - other.boundingBox.top) < 30 &&
                     Math.abs(this.boundingBox.right - other.boundingBox.right) < 30 &&
@@ -349,17 +333,19 @@ public class MainActivity extends AppCompatActivity {
                     {0, 0, 1, 0},
                     {0, 0, 0, 1}
             };
-            processNoise = 1e-7f;
-            measurementNoise = 1e-5f;
+            processNoise = 1e-7f;  // Reduced process noise for smoother tracking
+            measurementNoise = 1e-5f; // Reduced measurement noise to expect less variation
         }
 
         public Rect predictAndUpdate(Rect measurement) {
+            // Prediction step
             for (int i = 0; i < state.length; i++) {
                 errorCovariance[i][i] += processNoise;
             }
 
+            // Update step
             float[] measurementVec = new float[]{measurement.left, measurement.top, measurement.right, measurement.bottom};
-            float[] kalmanGain = new float[state.length];
+            float[] kalmanGain = new float[state.length];  // Calculate Kalman gain for each state
             for (int i = 0; i < state.length; i++) {
                 kalmanGain[i] = errorCovariance[i][i] / (errorCovariance[i][i] + measurementNoise);
             }
