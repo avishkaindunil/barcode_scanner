@@ -273,6 +273,7 @@ public class MainActivity extends AppCompatActivity {
         private static final int SMOOTHING_WINDOW_SIZE = 15; // Number of frames for stabilization
 
         private final String value;
+        private final String uniqueId;
         private KalmanFilter kalmanFilter;
         private Rect boundingBox;
         private RectF iconBounds;
@@ -282,7 +283,17 @@ public class MainActivity extends AppCompatActivity {
             this.value = value;
             this.boundingBox = boundingBox;
             this.kalmanFilter = new KalmanFilter(boundingBox);
+            this.uniqueId = generateUniqueId(); // Generate a unique ID
             setIconBounds((boundingBox.left + boundingBox.right) / 2, (boundingBox.top + boundingBox.bottom) / 2, 50);
+        }
+
+        private String generateUniqueId() {
+            // Use a combination of value and current time to ensure uniqueness
+            return value + "_" + System.nanoTime();
+        }
+
+        public String getUniqueId() {
+            return uniqueId;
         }
 
         void update(Rect newBoundingBox) {

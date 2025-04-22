@@ -125,7 +125,7 @@ public class BarcodeOverlayView extends View {
 
                 barcode.setIconBounds(centerX, centerY, 50);
 
-                String uniqueId = barcode.getValue();
+                String uniqueId = barcode.getValue(); // Use uniqueId
                 if (activePopups.containsKey(uniqueId)) {
                     PopupWindow popupWindow = activePopups.get(uniqueId);
                     // Update the popup position based on the bounding box
