@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static class StabilizedBarcode {
-        private static final int SMOOTHING_WINDOW_SIZE = 10; // Number of frames for stabilization
+        private static final int SMOOTHING_WINDOW_SIZE = 15; // Number of frames for stabilization
 
         private final String value;
         private KalmanFilter kalmanFilter;
