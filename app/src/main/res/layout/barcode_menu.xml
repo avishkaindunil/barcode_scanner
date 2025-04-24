@@ -15,14 +15,14 @@
         android:id="@+id/barcodeDetailsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
+        android:textSize="12sp"
         android:textColor="@android:color/black"
         android:layout_marginBottom="5dp" />
 
     <ImageView
         android:id="@+id/barcodeImageView"
-        android:layout_width="100dp"
-        android:layout_height="126dp"
+        android:layout_width="50dp"
+        android:layout_height="64dp"
         android:layout_gravity="center"
         android:scaleType="centerCrop"/>
 
@@ -35,21 +35,21 @@
 
         <Button
             android:id="@+id/cancelButton"
-            android:layout_width="wrap_content"
+            android:layout_width="84dp"
             android:text="CANCEL"
-            android:textSize="14sp"
-            android:layout_height="46dp"
+            android:textSize="9sp"
+            android:layout_height="37dp"
             android:backgroundTint="#000000"
             android:fontFamily="Arial"
             android:textColor="#ffffff"
-            android:layout_marginEnd="15dp" />
+            android:layout_marginEnd="7dp" />
 
         <Button
             android:id="@+id/okButton"
             android:layout_width="wrap_content"
             android:text="OK"
-            android:textSize="14sp"
-            android:layout_height="46dp"
+            android:textSize="9sp"
+            android:layout_height="37dp"
             android:backgroundTint="#000000"
             android:fontFamily="Arial"
             android:textColor="#ffffff"/>
