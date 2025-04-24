@@ -202,7 +202,7 @@ public class BarcodeOverlayView extends View {
 
         PopupWindow popupWindow = new PopupWindow(context);
         popupWindow.setWidth(570);
-        popupWindow.setHeight(460);
+        popupWindow.setHeight(442);
         popupWindow.setFocusable(true);
 
         View menuView = View.inflate(context, R.layout.barcode_menu, null);
@@ -228,8 +228,9 @@ public class BarcodeOverlayView extends View {
         GradientDrawable backgroundDrawable = new GradientDrawable();
         backgroundDrawable.setShape(GradientDrawable.RECTANGLE);
         backgroundDrawable.setColor(Color.WHITE);
-        backgroundDrawable.setCornerRadius(0);
+        backgroundDrawable.setCornerRadius(10);
         backgroundDrawable.setStroke(0, Color.WHITE);
+
 
         menuView.setBackground(backgroundDrawable);
 
